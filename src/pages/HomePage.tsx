@@ -133,9 +133,10 @@ export function HomePage() {
           <HorizontalScroll gap={24}>
             {artists.map((artist) => (
               <button key={artist.id} onClick={() => navigate(`/artist/${artist.id}`)}
+                className="artist-circle"
                 style={{ textAlign: 'center', flexShrink: 0, width: 100 }}>
                 <div style={{
-                  width: 100, height: 100, borderRadius: '50%',
+                  width: '100%', height: '100%', borderRadius: '50%',
                   overflow: 'hidden', marginBottom: 'var(--space-sm)',
                   border: '3px solid rgba(255,255,255,0.06)',
                   transition: 'border-color 0.3s, transform 0.3s',
@@ -169,9 +170,10 @@ export function HomePage() {
           <HorizontalScroll gap={16}>
             {recentlyPlayed.slice(0, 8).map((entry) => (
               <button key={entry.track.id} onClick={() => playTrack(entry.track)}
+                className="home-card"
                 style={{ flexShrink: 0, width: 180, textAlign: 'left' }}>
                 <div style={{
-                  width: 180, height: 180, borderRadius: 'var(--radius-lg)',
+                  width: '100%', height: '100%', borderRadius: 'var(--radius-lg)',
                   overflow: 'hidden', marginBottom: 'var(--space-sm)',
                   boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
                   transition: 'transform 0.3s var(--ease-out)',
@@ -209,9 +211,10 @@ export function HomePage() {
           <HorizontalScroll gap={16}>
             {favorites.slice(0, 8).map((track) => (
               <button key={track.id} onClick={() => playTrack(track, favorites, favorites.indexOf(track))}
+                className="home-card"
                 style={{ flexShrink: 0, width: 180, textAlign: 'left' }}>
                 <div style={{
-                  width: 180, height: 180, borderRadius: 'var(--radius-lg)',
+                  width: '100%', height: '100%', borderRadius: 'var(--radius-lg)',
                   overflow: 'hidden', marginBottom: 'var(--space-sm)',
                   boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
                   transition: 'transform 0.3s var(--ease-out)',

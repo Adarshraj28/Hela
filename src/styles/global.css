@@ -223,21 +223,40 @@ img { display: block; max-width: 100%; }
 @media (max-width: 768px) {
   html { font-size: 16px; }
   body { -webkit-overflow-scrolling: touch; }
-  
-  /* Larger touch targets */
   button { min-height: 44px; }
-  
-  /* Better input handling */
   input[type="range"] { height: 24px; }
-  
-  /* Safe area for notch devices */
-  .app-main {
-    padding-top: env(safe-area-inset-top) !important;
+  .app-main { padding-top: env(safe-area-inset-top) !important; }
+  main { animation: fadeIn 0.2s var(--ease-out); }
+
+  /* Full player — immersive on mobile */
+  .full-player-overlay {
+    border-radius: 0 !important;
   }
-  
-  /* Smooth page transitions */
-  main {
-    animation: fadeIn 0.2s var(--ease-out);
+
+  /* Home page mobile */
+  .home-greeting h1 {
+    font-size: 1.75rem !important;
+  }
+  .home-section-title {
+    font-size: 1.0625rem !important;
+  }
+
+  /* Artist circles — slightly smaller on mobile */
+  .artist-circle {
+    width: 80px !important;
+    height: 80px !important;
+  }
+
+  /* Album/Recently played cards — fit mobile */
+  .home-card {
+    width: 150px !important;
+    height: 150px !important;
+  }
+
+  /* Library cards — full width on mobile */
+  .library-card {
+    width: 100% !important;
+    height: 80px !important;
   }
 }
 

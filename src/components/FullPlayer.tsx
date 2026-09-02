@@ -78,6 +78,7 @@ export function FullPlayer() {
 
   return (
     <div
+      className="full-player-overlay"
       onTouchStart={handleTouchStart}
       onTouchEnd={handleTouchEnd}
       style={{
@@ -104,7 +105,6 @@ export function FullPlayer() {
           <Icon.ChevronDown size={24} />
         </button>
 
-        {/* Tabs — matches reference: Highlight / Lyrics / Video */}
         <div style={{ display: 'flex', gap: 4, background: 'rgba(255,255,255,0.05)', borderRadius: 'var(--radius-full)', padding: 3 }}>
           {(['highlight', 'lyrics', 'embed'] as const).map((v) => (
             <button key={v} onClick={() => setView(v)} style={{
@@ -134,12 +134,12 @@ export function FullPlayer() {
         justifyContent: view === 'lyrics' ? 'flex-start' : 'center',
       }}>
 
-        {/* ===== HIGHLIGHT (COVER) VIEW ===== */}
+        {/* ===== HIGHLIGHT VIEW ===== */}
         {view === 'highlight' && (
           <>
-            {/* Large artwork — the visual anchor */}
+            {/* Large artwork — takes up most of mobile screen */}
             <div style={{
-              width: 'min(75vw, 340px)', aspectRatio: '1/1',
+              width: 'min(80vw, 360px)', aspectRatio: '1/1',
               borderRadius: 'var(--radius-xl)', overflow: 'hidden',
               boxShadow: dominant
                 ? `0 24px 80px ${dominant}50, 0 0 120px ${dominant}15`
@@ -155,7 +155,7 @@ export function FullPlayer() {
             {/* Track info */}
             <div style={{ textAlign: 'center', width: '100%', marginBottom: 'var(--space-lg)' }}>
               <h2 style={{
-                fontSize: 'clamp(1.25rem, 4vw, 1.75rem)', fontWeight: 700, letterSpacing: '-0.02em',
+                fontSize: 'clamp(1.25rem, 5vw, 1.75rem)', fontWeight: 700, letterSpacing: '-0.02em',
                 color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', lineHeight: 1.2,
               }}>{currentTrack.title}</h2>
               <p style={{ fontSize: '1rem', color: 'var(--text-secondary)', fontWeight: 500, marginTop: 6 }}>
@@ -182,7 +182,7 @@ export function FullPlayer() {
               </div>
             </div>
 
-            {/* Transport controls — matches reference layout */}
+            {/* Transport controls */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 'var(--space-2xl)', marginBottom: 'var(--space-xl)' }}>
               <CtrlBtn onClick={toggleShuffle} active={shuffle} label="Shuffle">
                 <Icon.Shuffle size={22} />
@@ -191,7 +191,6 @@ export function FullPlayer() {
                 <Icon.Previous size={30} />
               </CtrlBtn>
 
-              {/* Large play button — signature element */}
               <button onClick={togglePlay} aria-label={isPlaying ? 'Pause' : 'Play'}
                 style={{
                   width: 72, height: 72, borderRadius: '50%',
@@ -216,7 +215,7 @@ export function FullPlayer() {
               </CtrlBtn>
             </div>
 
-            {/* Secondary actions — matches reference */}
+            {/* Secondary actions */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 'var(--space-2xl)', marginBottom: 'var(--space-xl)' }}>
               <button onClick={() => { if (isLiked) removeFavorite(currentTrack.id); else addFavorite(currentTrack); }}
                 aria-label={isLiked ? 'Unlike' : 'Like'}
@@ -240,7 +239,7 @@ export function FullPlayer() {
               </button>
             </div>
 
-            {/* Bottom buttons — matches reference: Equalizer Settings + Queue List */}
+            {/* Bottom buttons — matches reference */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', maxWidth: 440 }}>
               <button style={{
                 display: 'flex', alignItems: 'center', gap: 'var(--space-sm)',
@@ -264,7 +263,7 @@ export function FullPlayer() {
           </>
         )}
 
-        {/* ===== EMBED (VIDEO) VIEW ===== */}
+        {/* ===== EMBED VIEW ===== */}
         {view === 'embed' && (
           <div style={{ width: '100%', paddingTop: 'var(--space-lg)' }}>
             <h2 style={{
@@ -336,6 +335,9 @@ export function FullPlayer() {
           </div>
         )}
       </div>
+
+      {/* Mobile-specific styles */}
+      <style>{`\n        @media (max-width: 768px) {\n          .full-player-overlay {\n            border-radius: 0 !important;\n            padding-bottom: env(safe-area-inset-bottom) !important;\n          }\n        }\n      `}</style>
     </div>
   );
 }
