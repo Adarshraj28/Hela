@@ -205,7 +205,7 @@ function QueueItem({
         gap: 'var(--space-sm)',
         padding: '6px var(--space-sm)',
         borderRadius: 'var(--radius-sm)',
-        background: hovered ? 'var(--bg-glass-hover)' : 'transparent',
+        background: hovered ? 'rgba(255,255,255,0.04)' : 'transparent',
         opacity: dimmed ? 0.5 : 1,
         cursor: 'pointer',
         transition: 'background var(--t-fast)',

@@ -110,13 +110,13 @@ export function AlbumPage() {
   const isLiked = isFavoriteAlbum(album.id);
 
   return (
-    <div style={{ paddingBottom: 'var(--space-2xl)' }}>
+    <div style={{ paddingBottom: 'var(--space-2xl)', position: 'relative' }}>
       {/* Header gradient */}
       <div style={{
         position: 'absolute',
         top: 0,
-        left: 0,
-        right: 0,
+        left: -20,
+        right: -20,
         height: 400,
         background: dominantColor
           ? `linear-gradient(180deg, ${dominantColor}60 0%, transparent 100%)`
