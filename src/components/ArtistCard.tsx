@@ -9,79 +9,49 @@ interface ArtistCardProps {
 
 export function ArtistCard({ artist, size = 'md' }: ArtistCardProps) {
   const navigate = useNavigate();
-  const [isHovered, setIsHovered] = useState(false);
-  const [imgLoaded, setImgLoaded] = useState(false);
+  const [hovered, setHovered] = useState(false);
+  const [imgOk, setImgOk] = useState(false);
 
-  const dimensions = { sm: 140, md: 180, lg: 220 };
+  const dims = { sm: 130, md: 160, lg: 200 };
 
   return (
     <div
-      style={{
-        width: dimensions[size],
-        cursor: 'pointer',
-        textAlign: 'center',
-        flexShrink: 0,
-      }}
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
+      style={{ width: dims[size], cursor: 'pointer', textAlign: 'center', flexShrink: 0 }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
       onClick={() => navigate(`/artist/${artist.id}`)}
-      role="button"
-      tabIndex={0}
+      role="button" tabIndex={0}
       onKeyDown={(e) => { if (e.key === 'Enter') navigate(`/artist/${artist.id}`); }}
       aria-label={`Go to ${artist.name}'s page`}
     >
       <div style={{
-        position: 'relative',
-        width: '100%',
-        aspectRatio: '1 / 1',
-        borderRadius: '50%',
-        overflow: 'hidden',
+        position: 'relative', width: '100%', aspectRatio: '1/1',
+        borderRadius: '50%', overflow: 'hidden',
         marginBottom: 'var(--space-sm)',
-        boxShadow: isHovered
-          ? '0 0 30px rgba(168, 85, 247, 0.2)'
-          : '0 4px 20px rgba(0, 0, 0, 0.3)',
+        background: 'var(--bg-surface)',
+        boxShadow: hovered
+          ? '0 0 24px rgba(139,92,246,0.15)'
+          : '0 4px 16px rgba(0,0,0,0.25)',
         transition: 'box-shadow 0.3s ease',
       }}>
-        {!imgLoaded && (
-          <div style={{
-            position: 'absolute',
-            inset: 0,
-            background: 'var(--bg-surface)',
-            borderRadius: '50%',
-          }} />
-        )}
-        <img
-          src={artist.artwork}
-          alt={`${artist.name} photo`}
-          loading="lazy"
-          onLoad={() => setImgLoaded(true)}
+        <img src={artist.artwork} alt="" loading="lazy"
+          onLoad={() => setImgOk(true)}
           style={{
-            width: '100%',
-            height: '100%',
-            objectFit: 'cover',
-            transition: 'transform 0.4s cubic-bezier(0.4, 0, 0.2, 1)',
-            transform: isHovered ? 'scale(1.08)' : 'scale(1)',
-            opacity: imgLoaded ? 1 : 0,
-          }}
-        />
+            width: '100%', height: '100%', objectFit: 'cover',
+            transition: 'transform 0.4s var(--ease-smooth)',
+            transform: hovered ? 'scale(1.06)' : 'scale(1)',
+            opacity: imgOk ? 1 : 0,
+          }} />
       </div>
       <h3 style={{
-        fontSize: size === 'sm' ? '0.875rem' : '0.9375rem',
-        fontWeight: 600,
-        color: 'var(--text-primary)',
-        overflow: 'hidden',
-        textOverflow: 'ellipsis',
-        whiteSpace: 'nowrap',
-      }}>
-        {artist.name}
-      </h3>
+        fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-primary)',
+        overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+        fontFamily: 'var(--font)',
+      }}>{artist.name}</h3>
       <p style={{
-        fontSize: '0.75rem',
-        color: 'var(--text-secondary)',
-        marginTop: 2,
-      }}>
-        Artist
-      </p>
+        fontSize: '0.625rem', color: 'var(--text-tertiary)', marginTop: 2,
+        fontFamily: 'var(--font)',
+      }}>Artist</p>
     </div>
   );
 }

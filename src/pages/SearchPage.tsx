@@ -131,14 +131,14 @@ export function SearchPage() {
 
       {/* Error */}
       {error && (
-        <EmptyState icon="⚠️" title="Search Error" description={error}
+        <EmptyState title="Search Error" description={error}
           action={<button onClick={() => { setError(null); if (debounced) setQuery(query); }}
             style={{ padding: '8px 20px', borderRadius: 'var(--radius-full)', background: 'var(--accent)', color: 'white', fontWeight: 600, fontSize: '0.8125rem' }}>Try Again</button>} />
       )}
 
       {/* No results */}
       {noResults && (
-        <EmptyState icon="🔍" title="No results found" description={`Nothing matched "${debounced}". Try something else.`} />
+        <EmptyState title="No results found" description={`Nothing matched "${debounced}". Try something else.`} />
       )}
 
       {/* Results */}
@@ -146,24 +146,24 @@ export function SearchPage() {
         <>
           {artists.length > 0 && (
             <section style={{ marginBottom: 'var(--space-2xl)' }}>
-              <SectionHeader title="Artists" icon="🎤" />
+              <SectionHeader title="Artists" />
               <HorizontalScroll gap={20}>{artists.map((a) => <ArtistCard key={a.id} artist={a} />)}</HorizontalScroll>
             </section>
           )}
           {albums.length > 0 && (
             <section style={{ marginBottom: 'var(--space-2xl)' }}>
-              <SectionHeader title="Albums" icon="💿" />
+              <SectionHeader title="Albums" />
               <HorizontalScroll gap={20}>{albums.map((a) => <AlbumCard key={a.id} album={a} />)}</HorizontalScroll>
             </section>
           )}
           {tracks.length > 0 && (
             <section style={{ marginBottom: 'var(--space-2xl)' }}>
-              <SectionHeader title="Songs" icon="🎵" subtitle={`${tracks.length} results`} />
+              <SectionHeader title="Songs" subtitle={`${tracks.length} results`} />
               <div>{tracks.map((t, i) => <SongRow key={t.id} track={t} tracks={tracks} index={i} showIndex showAlbum />)}</div>
             </section>
           )}
           {!searched && !query && (
-            <EmptyState icon="🔍" title="Search for music" description="Find your favorite songs, artists, and albums" />
+            <EmptyState title="Search for music" description="Find your favorite songs, artists, and albums" />
           )}
         </>
       )}

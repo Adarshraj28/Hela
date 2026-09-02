@@ -241,7 +241,7 @@ export function ArtistPage() {
 
       {/* Popular tracks */}
       <section style={{ marginBottom: 'var(--space-2xl)' }}>
-        <SectionHeader title="Popular" icon="🔥" />
+        <SectionHeader title="Popular" />
         {topTracks.map((track, i) => (
           <SongRow
             key={track.id}
@@ -257,7 +257,7 @@ export function ArtistPage() {
       {/* Discography */}
       {albums.length > 0 && (
         <section style={{ marginBottom: 'var(--space-2xl)' }}>
-          <SectionHeader title="Discography" icon="💿" subtitle={`${albums.length} releases`} />
+          <SectionHeader title="Discography" subtitle={`${albums.length} releases`} />
           <div style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))',
