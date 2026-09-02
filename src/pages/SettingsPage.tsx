@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { usePlayerStore } from '../store/playerStore';
 import { useLibraryStore } from '../store/libraryStore';
 import { usePlaylistStore } from '../store/playlistStore';
+import { useThemeStore } from '../store/themeStore';
 import { Icon } from '../components/HelaIcons';
 
 export function SettingsPage() {
@@ -10,6 +11,7 @@ export function SettingsPage() {
   const { volume, setVolume, shuffle, toggleShuffle, repeat, cycleRepeat } = usePlayerStore();
   const { favorites, favoriteAlbums, favoriteArtists, recentlyPlayed, clearRecentlyPlayed } = useLibraryStore();
   const { playlists } = usePlaylistStore();
+  const { theme, setTheme } = useThemeStore();
   const [showClearConfirm, setShowClearConfirm] = useState(false);
 
   const totalTracks = favorites.length;
@@ -58,6 +60,47 @@ export function SettingsPage() {
             <p style={{ fontSize: '0.625rem', color: 'var(--text-tertiary)', marginTop: 2 }}>{label}</p>
           </div>
         ))}
+      </section>
+
+      {/* Appearance */}
+      <section style={{ marginBottom: 'var(--space-xl)' }}>
+        <h2 style={{
+          fontSize: '0.6875rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase',
+          color: 'var(--text-tertiary)', marginBottom: 'var(--space-md)',
+        }}>Appearance</h2>
+        <div style={{
+          borderRadius: 'var(--radius-md)', overflow: 'hidden',
+          border: '1px solid var(--border-subtle)',
+        }}>
+          <div style={{
+            padding: 'var(--space-md)', background: 'rgba(255,255,255,0.01)',
+            borderBottom: '1px solid var(--border-subtle)',
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)' }}>
+              {theme === 'dark' ? <Icon.Settings size={16} style={{ color: 'var(--accent)' }} /> : <span style={{ fontSize: '0.875rem' }}>☀️</span>}
+              <div>
+                <p style={{ fontSize: '0.8125rem', color: 'var(--text-primary)' }}>Theme</p>
+                <p style={{ fontSize: '0.625rem', color: 'var(--text-tertiary)', marginTop: 1 }}>{theme === 'dark' ? 'Dark mode' : 'Light mode'}</p>
+              </div>
+            </div>
+            <button onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+              aria-label={`Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`}
+              style={{
+                width: 44, height: 24, borderRadius: 12,
+                background: theme === 'light' ? 'var(--accent)' : 'rgba(255,255,255,0.08)',
+                position: 'relative', transition: 'background var(--t-normal)', flexShrink: 0,
+              }}>
+              <div style={{
+                width: 20, height: 20, borderRadius: '50%', background: '#fff',
+                position: 'absolute', top: 2,
+                left: theme === 'light' ? 22 : 2,
+                transition: 'left var(--t-normal) var(--ease-spring)',
+                boxShadow: '0 1px 4px rgba(0,0,0,0.3)',
+              }} />
+            </button>
+          </div>
+        </div>
       </section>
 
       {/* Playback Settings */}

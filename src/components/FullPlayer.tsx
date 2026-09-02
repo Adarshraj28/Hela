@@ -210,7 +210,7 @@ export function FullPlayer() {
                   background: 'linear-gradient(180deg, #fff 0%, #e0e0e8 100%)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   color: '#000', flexShrink: 0,
-                  boxShadow: '0 4px 24px rgba(255,255,255,0.15), 0 0 60px rgba(139,92,246,0.1)',
+                  boxShadow: '0 4px 24px rgba(255,255,255,0.15), 0 0 60px rgba(139,92,246,0.15), 0 0 80px rgba(139,92,246,0.08)',
                   transition: 'transform 80ms var(--ease-spring), box-shadow 0.3s',
                 }}
                 onMouseDown={(e) => { e.currentTarget.style.transform = 'scale(0.88)'; }}

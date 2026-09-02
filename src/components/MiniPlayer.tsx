@@ -27,7 +27,7 @@ export function MiniPlayer() {
     <div className="mini-player" style={{
       position: 'fixed', bottom: 0, left: 0, right: 0,
       height: 'var(--player-height)',
-      background: 'rgba(8, 8, 14, 0.88)',
+      background: 'var(--bg-glass-solid)',
       backdropFilter: 'blur(48px) saturate(1.6)',
       WebkitBackdropFilter: 'blur(48px) saturate(1.6)',
       borderTop: '1px solid rgba(255,255,255,0.04)',
@@ -82,6 +82,7 @@ export function MiniPlayer() {
             width: 36, height: 36, borderRadius: '50%', background: '#fff',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             color: '#000', flexShrink: 0,
+            boxShadow: '0 2px 12px rgba(255,255,255,0.15), 0 0 20px rgba(139,92,246,0.1)',
             transition: 'transform 80ms var(--ease-spring)',
           }}
           onMouseDown={(e) => { e.currentTarget.style.transform = 'scale(0.88)'; }}

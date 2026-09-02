@@ -1,8 +1,10 @@
+import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { Sidebar, MobileNav } from './components/Navigation';
 import { MiniPlayer } from './components/MiniPlayer';
 import { FullPlayer } from './components/FullPlayer';
 import { usePlayerStore } from './store/playerStore';
+import { useThemeStore, applyTheme } from './store/themeStore';
 import { HomePage } from './pages/HomePage';
 import { SearchPage } from './pages/SearchPage';
 import { LibraryPage } from './pages/LibraryPage';
@@ -13,6 +15,10 @@ import { SettingsPage } from './pages/SettingsPage';
 
 export default function App() {
   const hasTrack = usePlayerStore((s) => !!s.currentTrack);
+  const theme = useThemeStore((s) => s.theme);
+
+  // Apply theme on mount
+  useEffect(() => { applyTheme(theme); }, [theme]);
 
   return (
     <BrowserRouter>

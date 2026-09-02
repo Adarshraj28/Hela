@@ -13,9 +13,9 @@ export function Sidebar() {
   return (
     <aside className="desktop-sidebar" style={{
       width: 'var(--sidebar-width)', height: '100vh', position: 'fixed', left: 0, top: 0,
-      background: 'rgba(6, 6, 11, 0.5)',
-      backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)',
-      borderRight: '1px solid rgba(255,255,255,0.03)',
+      background: 'rgba(6, 6, 11, 0.45)',
+      backdropFilter: 'blur(32px) saturate(1.4)', WebkitBackdropFilter: 'blur(32px) saturate(1.4)',
+      borderRight: '1px solid rgba(255,255,255,0.04)',
       display: 'flex', flexDirection: 'column', padding: 'var(--space-lg) var(--space-md)',
       zIndex: 'var(--z-sticky)',
     }}>
@@ -30,7 +30,7 @@ export function Sidebar() {
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           fontSize: '0.8125rem', fontWeight: 700, color: '#fff',
         }}>H</div>
-        <span style={{ fontSize: '1.0625rem', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
+        <span style={{ fontSize: '1.0625rem', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.02em', textShadow: '0 0 20px rgba(139,92,246,0.2)' }}>
           Hela
         </span>
       </div>
@@ -43,7 +43,8 @@ export function Sidebar() {
               display: 'flex', alignItems: 'center', gap: 'var(--space-md)',
               padding: '9px 12px', borderRadius: 'var(--radius-sm)',
               color: isActive ? '#fff' : 'var(--text-secondary)',
-              background: isActive ? 'rgba(255,255,255,0.06)' : 'transparent',
+              background: isActive ? 'rgba(139, 92, 246, 0.08)' : 'transparent',
+              boxShadow: isActive ? 'inset 0 0 0 1px rgba(139, 92, 246, 0.08)' : 'none',
               fontWeight: isActive ? 600 : 400, fontSize: '0.8125rem',
               transition: 'all var(--t-fast)',
             })}>
@@ -77,8 +78,8 @@ export function MobileNav() {
     <nav className="mobile-nav" style={{
       position: 'fixed', bottom: 0, left: 0, right: 0,
       height: 'var(--mobile-nav-height)',
-      background: 'rgba(6, 6, 11, 0.94)',
-      backdropFilter: 'blur(32px)', WebkitBackdropFilter: 'blur(32px)',
+      background: 'var(--bg-glass-solid)',
+      backdropFilter: 'blur(32px) saturate(1.4)', WebkitBackdropFilter: 'blur(32px) saturate(1.4)',
       borderTop: '1px solid rgba(255,255,255,0.04)',
       display: 'none', alignItems: 'center', justifyContent: 'space-around',
       paddingBottom: 'env(safe-area-inset-bottom)',

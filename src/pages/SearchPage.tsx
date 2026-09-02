@@ -79,11 +79,12 @@ export function SearchPage() {
             style={{
               width: '100%', padding: '12px 44px 12px 44px',
               background: 'var(--bg-surface)', borderRadius: 'var(--radius-full)',
-              border: '1px solid var(--border-subtle)', color: 'var(--text-primary)',
+              border: '1px solid var(--border-medium)', color: 'var(--text-primary)',
+              backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
               fontSize: '0.9375rem', outline: 'none',
               transition: 'border-color var(--t-fast), box-shadow var(--t-fast)',
             }}
-            onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(139,92,246,0.1)'; }}
+            onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(139,92,246,0.1), 0 0 20px rgba(139,92,246,0.08)'; }}
             onBlur={(e) => { e.currentTarget.style.borderColor = 'var(--border-subtle)'; e.currentTarget.style.boxShadow = 'none'; }}
           />
           {query && (

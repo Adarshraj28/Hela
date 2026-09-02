@@ -222,7 +222,7 @@ export function AlbumPage() {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            boxShadow: '0 4px 16px rgba(168, 85, 247, 0.3)',
+            boxShadow: '0 4px 20px rgba(139, 92, 246, 0.4), 0 0 40px rgba(139, 92, 246, 0.15)',
             transition: 'transform var(--t-fast)',
           }}
         >
