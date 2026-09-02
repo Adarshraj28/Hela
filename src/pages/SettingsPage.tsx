@@ -25,11 +25,11 @@ export function SettingsPage() {
       {/* Header */}
       <div style={{ padding: 'var(--space-2xl) 0 var(--space-xl)', textAlign: 'center' }}>
         <div style={{
-          width: 80, height: 80, borderRadius: '50%', margin: '0 auto var(--space-md)',
-          background: 'var(--gradient-accent)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          width: 80, height: 80, borderRadius: 'var(--radius-lg)', margin: '0 auto var(--space-md)',
+          overflow: 'hidden',
           boxShadow: '0 8px 32px rgba(139,92,246,0.3)',
         }}>
-          <span style={{ fontSize: '1.75rem', fontWeight: 700, color: '#fff' }}>H</span>
+          <img src="/logo.png" alt="Hela" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
         </div>
         <h1 style={{
           fontSize: 'clamp(1.5rem, 4vw, 2rem)', fontWeight: 700, color: 'var(--text-primary)',
@@ -291,9 +291,9 @@ export function SettingsPage() {
         }}>
           <div style={{
             width: 48, height: 48, borderRadius: 'var(--radius-md)', margin: '0 auto var(--space-md)',
-            background: 'var(--gradient-accent)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            overflow: 'hidden',
           }}>
-            <span style={{ fontSize: '1.25rem', fontWeight: 700, color: '#fff' }}>H</span>
+            <img src="/logo.png" alt="Hela" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
           </div>
           <p style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)' }}>Hela</p>
           <p style={{ fontSize: '0.6875rem', color: 'var(--text-tertiary)', marginTop: 'var(--space-xs)' }}>

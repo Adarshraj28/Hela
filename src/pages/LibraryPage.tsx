@@ -82,7 +82,7 @@ export function LibraryPage() {
         <section>
           {favorites.length === 0 ? (
             <EmptyState
-              icon="♡"
+              variant="library"
               title="Your library is empty"
               description="Start saving songs and they'll appear here."
               action={
@@ -163,7 +163,7 @@ export function LibraryPage() {
         <section>
           {favoriteAlbums.length === 0 ? (
             <EmptyState
-              icon="💿"
+              variant="library"
               title="No saved albums"
               description="Albums you save will appear here."
               action={
@@ -201,7 +201,7 @@ export function LibraryPage() {
         <section>
           {favoriteArtists.length === 0 ? (
             <EmptyState
-              icon="🎤"
+              variant="library"
               title="No followed artists"
               description="Artists you follow will appear here."
               action={

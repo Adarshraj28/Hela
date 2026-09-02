@@ -5,6 +5,7 @@ import { usePlayerStore } from '../store/playerStore';
 import { SectionHeader } from '../components/SectionHeader';
 import { SongRow } from '../components/SongRow';
 import { EmptyState } from '../components/EmptyState';
+import { PlaylistArt } from '../components/MusicIllustrations';
 
 export function PlaylistsPage() {
   const { id } = useParams<{ id: string }>();
@@ -61,15 +62,11 @@ export function PlaylistsPage() {
             width: 200,
             height: 200,
             borderRadius: 'var(--radius-lg)',
-            background: 'var(--gradient-primary)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: '4rem',
+            overflow: 'hidden',
             flexShrink: 0,
             boxShadow: '0 8px 40px rgba(168, 85, 247, 0.3)',
           }}>
-            🎵
+            <PlaylistArt name={playlist.name} size={200} />
           </div>
           <div>
             <p style={{
@@ -188,7 +185,7 @@ export function PlaylistsPage() {
         {/* Tracks */}
         {playlist.tracks.length === 0 ? (
           <EmptyState
-            icon="🎵"
+            variant="playlist"
             title="This playlist is empty"
             description="Search for songs and add them to this playlist."
             action={
@@ -353,7 +350,7 @@ export function PlaylistsPage() {
       {/* Playlist grid */}
       {playlists.length === 0 ? (
         <EmptyState
-          icon="🎵"
+          variant="playlist"
           title="No playlists yet"
           description="Create your first playlist to organize your music."
           action={
@@ -396,15 +393,11 @@ export function PlaylistsPage() {
                 width: '100%',
                 aspectRatio: '1 / 1',
                 borderRadius: 'var(--radius-md)',
-                background: 'var(--gradient-primary)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '2rem',
+                overflow: 'hidden',
                 marginBottom: 'var(--space-md)',
                 boxShadow: '0 4px 16px rgba(168, 85, 247, 0.2)',
               }}>
-                🎵
+                <PlaylistArt name={playlist.name} size={220} />
               </div>
               <h3 style={{
                 fontSize: '0.9375rem',

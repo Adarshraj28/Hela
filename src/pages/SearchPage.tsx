@@ -164,7 +164,7 @@ export function SearchPage() {
             </section>
           )}
           {!searched && !query && (
-            <EmptyState title="Search for music" description="Find your favorite songs, artists, and albums" />
+            <EmptyState variant="search" title="Search for music" description="Find your favorite songs, artists, and albums" />
           )}
         </>
       )}

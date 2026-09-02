@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import type { Track } from '../types';
 import { usePlaylistStore } from '../store/playlistStore';
+import { PlaylistArt } from './MusicIllustrations';
 
 interface AddToPlaylistModalProps {
   track: Track;
@@ -98,14 +99,10 @@ export function AddToPlaylistModal({ track, onClose }: AddToPlaylistModalProps) 
                     width: 40,
                     height: 40,
                     borderRadius: 'var(--radius-sm)',
-                    background: 'var(--gradient-primary)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '1rem',
+                    overflow: 'hidden',
                     flexShrink: 0,
                   }}>
-                    🎵
+                    <PlaylistArt name={playlist.name} size={40} />
                   </div>
                   <div>
                     <p style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)' }}>

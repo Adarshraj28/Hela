@@ -26,10 +26,10 @@ export function Sidebar() {
       }}>
         <div style={{
           width: 30, height: 30, borderRadius: 'var(--radius-sm)',
-          background: 'var(--gradient-accent)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: '0.8125rem', fontWeight: 700, color: '#fff',
-        }}>H</div>
+          overflow: 'hidden', flexShrink: 0,
+        }}>
+          <img src="/logo.png" alt="Hela" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+        </div>
         <span style={{ fontSize: '1.0625rem', fontWeight: 600, color: 'var(--text-primary)', letterSpacing: '-0.02em', textShadow: '0 0 20px rgba(139,92,246,0.2)' }}>
           Hela
         </span>
