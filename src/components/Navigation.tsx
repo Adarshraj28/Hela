@@ -5,8 +5,7 @@ const NAV = [
   { path: '/', label: 'Home', icon: Icon.Home },
   { path: '/search', label: 'Search', icon: Icon.Search },
   { path: '/library', label: 'Library', icon: Icon.Library },
-  { path: '/playlists', label: 'Playlists', icon: Icon.List },
-  { path: '/settings', label: 'Profile', icon: Icon.Settings },
+  { path: '/settings', label: 'Setting', icon: Icon.Settings },
 ];
 
 export function Sidebar() {

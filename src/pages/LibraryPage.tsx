@@ -44,6 +44,23 @@ export function LibraryPage() {
           please choose the album you like
         </p>
 
+        {/* Search bar — matches reference */}
+        <div style={{ position: 'relative', marginBottom: 'var(--space-lg)' }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--text-tertiary)" strokeWidth="2" strokeLinecap="round"
+            style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', pointerEvents: 'none' }}>
+            <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+          <div onClick={() => navigate('/search')} style={{
+            width: '100%', padding: '12px 16px 12px 44px',
+            background: 'var(--bg-surface)', borderRadius: 'var(--radius-full)',
+            border: '1px solid var(--border-medium)',
+            color: 'var(--text-tertiary)', fontSize: '0.9375rem',
+            cursor: 'pointer',
+          }}>
+            What do you want to listen today ?
+          </div>
+        </div>
+
         {/* Tabs */}
         <div style={{
           display: 'flex',

@@ -53,14 +53,50 @@ export function HomePage() {
           background: 'radial-gradient(ellipse, rgba(139,92,246,0.06) 0%, transparent 70%)',
           pointerEvents: 'none',
         }} />
-        <h1 style={{
-          fontSize: 'clamp(2rem, 5vw, 3.2rem)', fontWeight: 700,
-          color: 'var(--text-primary)', letterSpacing: '-0.035em', lineHeight: 1.1,
-        }}>{getGreeting()}</h1>
-        <p style={{
-          fontSize: 'clamp(0.9375rem, 2vw, 1.125rem)',
-          color: 'var(--text-secondary)', marginTop: 'var(--space-sm)',
-        }}>What do you want to listen to?</p>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-sm)' }}>
+          <div>
+            <h1 style={{
+              fontSize: 'clamp(2rem, 5vw, 3.2rem)', fontWeight: 700,
+              color: 'var(--text-primary)', letterSpacing: '-0.035em', lineHeight: 1.1,
+            }}>{getGreeting()}</h1>
+            <p style={{
+              fontSize: 'clamp(0.9375rem, 2vw, 1.125rem)',
+              color: 'var(--text-secondary)', marginTop: 'var(--space-xs)',
+            }}>Wanna feel spirit today ?</p>
+          </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)' }}>
+            {/* Notification bell */}
+            <button style={{
+              width: 44, height: 44, borderRadius: '50%',
+              background: 'rgba(255,255,255,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: 'var(--text-secondary)', position: 'relative',
+            }}>
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+              </svg>
+              <div style={{
+                position: 'absolute', top: 8, right: 10,
+                width: 8, height: 8, borderRadius: '50%',
+                background: 'var(--accent-pink)',
+                border: '2px solid var(--bg-base)',
+              }} />
+            </button>
+            {/* Profile avatar */}
+            <button style={{
+              width: 44, height: 44, borderRadius: '50%',
+              overflow: 'hidden', flexShrink: 0,
+              border: '2px solid rgba(255,255,255,0.08)',
+            }}>
+              <div style={{
+                width: '100%', height: '100%',
+                background: 'var(--gradient-accent)',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: '1.125rem', fontWeight: 700, color: '#fff',
+              }}>F</div>
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* Error */}

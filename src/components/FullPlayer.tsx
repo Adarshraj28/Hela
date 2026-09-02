@@ -216,8 +216,8 @@ export function FullPlayer() {
               </CtrlBtn>
             </div>
 
-            {/* Secondary actions — matches reference: heart, settings, queue */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 'var(--space-2xl)' }}>
+            {/* Secondary actions — matches reference */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 'var(--space-2xl)', marginBottom: 'var(--space-xl)' }}>
               <button onClick={() => { if (isLiked) removeFavorite(currentTrack.id); else addFavorite(currentTrack); }}
                 aria-label={isLiked ? 'Unlike' : 'Like'}
                 style={{
@@ -227,13 +227,38 @@ export function FullPlayer() {
                 }}>
                 <Icon.Heart size={24} filled={isLiked} />
               </button>
-              <button aria-label="Equalizer Settings"
-                style={{ color: 'var(--text-tertiary)', padding: 'var(--space-sm)' }}>
-                <Icon.Settings size={22} />
-              </button>
               <button aria-label="Queue"
                 style={{ color: 'var(--text-tertiary)', padding: 'var(--space-sm)' }}>
                 <Icon.Queue size={22} />
+              </button>
+              <button aria-label="Share"
+                onClick={() => {
+                  if (navigator.share) navigator.share({ title: currentTrack.title, text: `${currentTrack.title} by ${currentTrack.artist}` });
+                }}
+                style={{ color: 'var(--text-tertiary)', padding: 'var(--space-sm)' }}>
+                <Icon.Share size={22} />
+              </button>
+            </div>
+
+            {/* Bottom buttons — matches reference: Equalizer Settings + Queue List */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', maxWidth: 440 }}>
+              <button style={{
+                display: 'flex', alignItems: 'center', gap: 'var(--space-sm)',
+                padding: '8px 16px', borderRadius: 'var(--radius-full)',
+                background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)',
+                color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: 500,
+              }}>
+                <Icon.Settings size={16} />
+                Equalizer Settings
+              </button>
+              <button style={{
+                display: 'flex', alignItems: 'center', gap: 'var(--space-sm)',
+                padding: '8px 16px', borderRadius: 'var(--radius-full)',
+                background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)',
+                color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: 500,
+              }}>
+                <Icon.Queue size={16} />
+                Queue List
               </button>
             </div>
           </>
