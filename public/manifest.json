@@ -1,0 +1,19 @@
+{
+  "name": "Freebuff",
+  "short_name": "Freebuff",
+  "description": "Your personal music streaming app",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#050508",
+  "theme_color": "#8b5cf6",
+  "categories": ["music", "entertainment"],
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

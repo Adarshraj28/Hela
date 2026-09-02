@@ -7,518 +7,276 @@ import { getTrackLyrics, type LyricLine } from '../services/api';
 
 export function FullPlayer() {
   const {
-    currentTrack,
-    isPlaying,
-    progress,
-    duration,
-    shuffle,
-    repeat,
-    showFullPlayer,
-    toggleFullPlayer,
-    togglePlay,
-    next,
-    previous,
-    seek,
-    toggleShuffle,
-    cycleRepeat,
+    currentTrack, isPlaying, progress, duration, shuffle, repeat,
+    showFullPlayer, toggleFullPlayer, togglePlay, next, previous, seek,
+    toggleShuffle, cycleRepeat, toggleMute,
   } = usePlayerStore();
-
   const { isFavorite, addFavorite, removeFavorite } = useLibraryStore();
-  const dominantColor = useDominantColor(currentTrack?.artwork);
-  const lyricsContainerRef = useRef<HTMLDivElement>(null);
+  const dominant = useDominantColor(currentTrack?.artwork);
+  const lyricsRef = useRef<HTMLDivElement>(null);
 
-  const isLiked = currentTrack ? isFavorite(currentTrack.id) : false;
-  const progressPercent = duration > 0 ? (progress / duration) * 100 : 0;
-
-  // Lyrics state
+  const [view, setView] = useState<'artwork' | 'lyrics'>('artwork');
   const [lyrics, setLyrics] = useState<LyricLine[]>([]);
   const [lyricsLoading, setLyricsLoading] = useState(false);
-  const [showLyrics, setShowLyrics] = useState(false);
-  const [activeLyricIndex, setActiveLyricIndex] = useState(-1);
+  const [activeLine, setActiveLine] = useState(-1);
 
-  // Fetch lyrics when track changes
+  const isLiked = currentTrack ? isFavorite(currentTrack.id) : false;
+  const pct = duration > 0 ? (progress / duration) * 100 : 0;
+
+  // Fetch lyrics
   useEffect(() => {
-    if (!currentTrack || !showLyrics) return;
+    if (!currentTrack || view !== 'lyrics') return;
     setLyricsLoading(true);
     setLyrics([]);
-    setActiveLyricIndex(-1);
+    getTrackLyrics(currentTrack.id.replace('dz-', ''))
+      .then(setLyrics)
+      .catch(() => setLyrics([]))
+      .finally(() => setLyricsLoading(false));
+  }, [currentTrack?.id, view]);
 
-    // Try to fetch lyrics (Spotify ID extraction is best-effort)
-    const fetchLyrics = async () => {
-      try {
-        // Use track title + artist to search for lyrics
-        const lines = await getTrackLyrics(currentTrack.id.replace('dz-', ''));
-        setLyrics(lines);
-      } catch {
-        setLyrics([]);
-      } finally {
-        setLyricsLoading(false);
-      }
-    };
-    fetchLyrics();
-  }, [currentTrack?.id, showLyrics]);
-
-  // Auto-scroll to active lyric
+  // Sync lyrics
   useEffect(() => {
-    if (lyrics.length === 0 || !lyricsContainerRef.current) return;
-
-    // Find the active lyric line based on progress
-    const currentTimeMs = progress * 1000;
+    if (lyrics.length === 0) return;
+    const ms = progress * 1000;
     let idx = -1;
     for (let i = lyrics.length - 1; i >= 0; i--) {
-      if (currentTimeMs >= lyrics[i].startTimeMs) {
-        idx = i;
-        break;
-      }
+      if (ms >= lyrics[i].startTimeMs) { idx = i; break; }
     }
-    setActiveLyricIndex(idx);
-
-    // Auto-scroll
-    if (idx >= 0) {
-      const activeEl = lyricsContainerRef.current.querySelector(`[data-lyric-idx="${idx}"]`);
-      if (activeEl) {
-        activeEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
+    setActiveLine(idx);
+    if (idx >= 0 && lyricsRef.current) {
+      const el = lyricsRef.current.querySelector(`[data-l="${idx}"]`);
+      el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
   }, [progress, lyrics]);
 
-  // Handle escape key
+  // Escape to close
   useEffect(() => {
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && showFullPlayer) toggleFullPlayer();
-    };
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
+    const h = (e: KeyboardEvent) => { if (e.key === 'Escape' && showFullPlayer) toggleFullPlayer(); };
+    window.addEventListener('keydown', h);
+    return () => window.removeEventListener('keydown', h);
   }, [showFullPlayer, toggleFullPlayer]);
 
   if (!currentTrack || !showFullPlayer) return null;
 
   const handleSeek = (e: React.MouseEvent<HTMLDivElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const percent = x / rect.width;
-    seek(percent * duration);
+    const r = e.currentTarget.getBoundingClientRect();
+    seek(((e.clientX - r.left) / r.width) * duration);
   };
 
+  const ambientBg = dominant
+    ? `radial-gradient(ellipse 80% 50% at 50% 0%, ${dominant}50 0%, transparent 70%), var(--bg-base)`
+    : 'var(--bg-base)';
+
   return (
-    <div
-      style={{
-        position: 'fixed',
-        inset: 0,
-        zIndex: 'var(--z-fullscreen)',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: showLyrics ? 'flex-start' : 'center',
-        background: dominantColor
-          ? `linear-gradient(180deg, ${dominantColor}40 0%, var(--bg-primary) 60%)`
-          : 'var(--bg-primary)',
-        transition: 'background 0.8s ease',
-        animation: 'fadeIn 0.3s ease',
-        overflow: 'auto',
-        padding: showLyrics ? 'var(--space-xl)' : 'var(--space-xl)',
-      }}
-    >
-      {/* Close button */}
-      <button
-        onClick={toggleFullPlayer}
-        aria-label="Close full player"
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 'var(--z-overlay)',
+      display: 'flex', flexDirection: 'column',
+      alignItems: 'center',
+      background: ambientBg,
+      transition: 'background 1s ease',
+      animation: 'fadeIn 0.35s var(--ease-out)',
+      overflow: 'auto',
+    }}>
+      {/* Close */}
+      <button onClick={toggleFullPlayer} aria-label="Close"
         style={{
-          position: 'absolute',
-          top: 'var(--space-lg)',
-          left: 'var(--space-lg)',
-          color: 'var(--text-secondary)',
-          padding: 'var(--space-sm)',
-          borderRadius: 'var(--radius-full)',
-          transition: 'color var(--transition-fast)',
-          zIndex: 10,
-        }}
-      >
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-          <polyline points="6 9 12 15 18 9" />
-        </svg>
-      </button>
-
-      {/* Toggle lyrics button */}
-      <button
-        onClick={() => setShowLyrics(!showLyrics)}
-        aria-label={showLyrics ? 'Show artwork' : 'Show lyrics'}
-        style={{
-          position: 'absolute',
-          top: 'var(--space-lg)',
-          right: 'var(--space-lg)',
-          padding: '6px 14px',
-          borderRadius: 'var(--radius-full)',
-          background: showLyrics ? 'var(--accent-primary)' : 'var(--bg-surface)',
-          color: showLyrics ? 'white' : 'var(--text-secondary)',
-          fontSize: '0.75rem',
-          fontWeight: 600,
-          letterSpacing: '0.05em',
-          textTransform: 'uppercase',
-          border: '1px solid var(--border-subtle)',
-          zIndex: 10,
-          transition: 'all var(--transition-fast)',
-        }}
-      >
-        {showLyrics ? 'Artwork' : 'Lyrics'}
-      </button>
-
-      {showLyrics ? (
-        /* ---- LYRICS VIEW ---- */
-        <div style={{
-          width: '100%',
-          maxWidth: 600,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          paddingTop: 'var(--space-3xl)',
-          paddingBottom: 'var(--space-3xl)',
+          position: 'absolute', top: 'var(--space-lg)', left: 'var(--space-lg)',
+          color: 'var(--text-secondary)', padding: 'var(--space-sm)',
+          borderRadius: 'var(--radius-full)', zIndex: 10,
+          background: 'rgba(255,255,255,0.06)',
         }}>
-          <p style={{
-            fontSize: '0.6875rem',
-            fontWeight: 700,
-            letterSpacing: '0.15em',
-            textTransform: 'uppercase',
-            color: 'var(--text-tertiary)',
-            marginBottom: 'var(--space-md)',
-          }}>
-            Lyrics
-          </p>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><polyline points="6 9 12 15 18 9" /></svg>
+      </button>
 
-          <h2 style={{
-            fontSize: '1.25rem',
-            fontWeight: 700,
-            color: 'var(--text-primary)',
-            marginBottom: 4,
-            textAlign: 'center',
-          }}>
-            {currentTrack.title}
-          </h2>
-          <p style={{
-            fontSize: '0.875rem',
-            color: 'var(--text-secondary)',
-            marginBottom: 'var(--space-2xl)',
-            textAlign: 'center',
-          }}>
-            {currentTrack.artist}
-          </p>
+      {/* View toggle */}
+      <div style={{
+        position: 'absolute', top: 'var(--space-lg)', right: 'var(--space-lg)',
+        display: 'flex', gap: 2, background: 'rgba(255,255,255,0.06)',
+        borderRadius: 'var(--radius-full)', padding: 2, zIndex: 10,
+      }}>
+        {(['artwork', 'lyrics'] as const).map((v) => (
+          <button key={v} onClick={() => setView(v)}
+            style={{
+              padding: '5px 14px', borderRadius: 'var(--radius-full)',
+              fontSize: '0.6875rem', fontWeight: 600, letterSpacing: '0.04em', textTransform: 'uppercase',
+              background: view === v ? 'rgba(255,255,255,0.12)' : 'transparent',
+              color: view === v ? 'var(--text-primary)' : 'var(--text-tertiary)',
+              transition: 'all var(--t-fast)',
+            }}>
+            {v === 'artwork' ? 'Cover' : 'Lyrics'}
+          </button>
+        ))}
+      </div>
 
-          {lyricsLoading ? (
-            <div style={{ padding: 'var(--space-2xl)', textAlign: 'center' }}>
-              <div style={{
-                width: 32,
-                height: 32,
-                borderRadius: '50%',
-                border: '3px solid var(--border-medium)',
-                borderTopColor: 'var(--accent-primary)',
-                animation: 'spin 0.8s linear infinite',
-                margin: '0 auto',
-              }} />
-              <p style={{ fontSize: '0.8125rem', color: 'var(--text-tertiary)', marginTop: 'var(--space-md)' }}>
-                Loading lyrics...
-              </p>
-            </div>
-          ) : lyrics.length > 0 ? (
-            <div
-              ref={lyricsContainerRef}
-              style={{
-                width: '100%',
-                maxHeight: '50vh',
-                overflowY: 'auto',
-                scrollBehavior: 'smooth',
-                textAlign: 'center',
-                padding: 'var(--space-lg) 0',
-              }}
-            >
-              {lyrics.map((line, i) => (
-                <p
-                  key={i}
-                  data-lyric-idx={i}
-                  style={{
-                    fontSize: i === activeLyricIndex ? '1.5rem' : '1rem',
-                    fontWeight: i === activeLyricIndex ? 700 : 400,
-                    color: i === activeLyricIndex ? 'var(--text-primary)' : 'var(--text-tertiary)',
-                    transition: 'all 0.3s ease',
-                    marginBottom: 'var(--space-md)',
-                    lineHeight: 1.5,
-                    opacity: i === activeLyricIndex ? 1 : 0.5,
-                    transform: i === activeLyricIndex ? 'scale(1.05)' : 'scale(1)',
-                  }}
-                >
-                  {line.words}
-                </p>
-              ))}
-            </div>
-          ) : (
+      {/* Content */}
+      <div style={{
+        flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',
+        justifyContent: view === 'lyrics' ? 'flex-start' : 'center',
+        width: '100%', maxWidth: 560, padding: '80px var(--space-xl) var(--space-2xl)',
+      }}>
+
+        {view === 'artwork' ? (
+          <>
+            <p style={{
+              fontSize: '0.625rem', fontWeight: 700, letterSpacing: '0.18em',
+              textTransform: 'uppercase', color: 'var(--text-tertiary)', marginBottom: 'var(--space-xl)',
+            }}>Now Playing</p>
+
+            {/* Artwork */}
             <div style={{
-              padding: 'var(--space-2xl)',
-              textAlign: 'center',
+              width: 'min(72vw, 340px)', aspectRatio: '1/1',
+              borderRadius: 'var(--radius-xl)', overflow: 'hidden',
+              boxShadow: dominant
+                ? `0 24px 80px ${dominant}50, 0 0 120px ${dominant}15`
+                : '0 24px 80px rgba(0,0,0,0.6)',
+              transition: 'box-shadow 1s ease',
+              marginBottom: 'var(--space-2xl)',
+              animation: isPlaying ? 'pulse 4s ease-in-out infinite' : 'none',
             }}>
-              <p style={{ fontSize: '2rem', marginBottom: 'var(--space-md)' }}>📝</p>
-              <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)' }}>
-                No lyrics available for this track
-              </p>
-              <p style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', marginTop: 'var(--space-sm)' }}>
-                Try listening to the track in Spotify for synced lyrics
-              </p>
+              <img src={currentTrack.artwork} alt={currentTrack.title}
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             </div>
-          )}
-        </div>
-      ) : (
-        /* ---- ARTWORK VIEW ---- */
-        <div style={{
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          width: '100%',
-          maxWidth: 600,
-        }}>
-          {/* NOW PLAYING label */}
-          <p style={{
-            fontSize: '0.6875rem',
-            fontWeight: 700,
-            letterSpacing: '0.15em',
-            textTransform: 'uppercase',
-            color: 'var(--text-tertiary)',
-            marginBottom: 'var(--space-xl)',
-          }}>
-            Now Playing
-          </p>
-
-          {/* Artwork */}
-          <div style={{
-            width: 'min(75vw, 360px)',
-            height: 'min(75vw, 360px)',
-            borderRadius: 'var(--radius-xl)',
-            overflow: 'hidden',
-            boxShadow: dominantColor
-              ? `0 20px 60px ${dominantColor}60, 0 0 100px ${dominantColor}20`
-              : '0 20px 60px rgba(0,0,0,0.5)',
-            transition: 'box-shadow 0.8s ease',
-            marginBottom: 'var(--space-2xl)',
-            animation: isPlaying ? 'artwork-pulse 3s ease-in-out infinite' : 'none',
-          }}>
-            <img
-              src={currentTrack.artwork}
-              alt={`${currentTrack.title} artwork`}
-              style={{
-                width: '100%',
-                height: '100%',
-                objectFit: 'cover',
-              }}
-            />
-          </div>
-
-          {/* Track info */}
-          <div style={{ textAlign: 'center', marginBottom: 'var(--space-lg)', width: '100%' }}>
-            <h2 style={{
-              fontSize: '1.5rem',
-              fontWeight: 700,
-              color: 'var(--text-primary)',
-              letterSpacing: '-0.02em',
-              marginBottom: 4,
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-            }}>
+          </>
+        ) : (
+          /* Lyrics view */
+          <div style={{ width: '100%', paddingTop: 'var(--space-2xl)', paddingBottom: '40vh' }}>
+            <h2 style={{ fontSize: '1.125rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 4, textAlign: 'center' }}>
               {currentTrack.title}
             </h2>
-            <p style={{
-              fontSize: '1rem',
-              color: 'var(--text-secondary)',
-              fontWeight: 500,
-            }}>
+            <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginBottom: 'var(--space-xl)', textAlign: 'center' }}>
               {currentTrack.artist}
             </p>
-          </div>
 
-          {/* Progress bar */}
-          <div style={{ width: '100%', maxWidth: 500, marginBottom: 'var(--space-sm)' }}>
-            <div
-              onClick={handleSeek}
-              style={{
-                height: 4,
-                background: 'var(--bg-surface)',
-                borderRadius: 2,
-                cursor: 'pointer',
-                position: 'relative',
-              }}
-              role="slider"
-              aria-label="Seek"
-              aria-valuenow={Math.round(progress)}
-              aria-valuemin={0}
-              aria-valuemax={Math.round(duration)}
-            >
-              <div style={{
-                height: '100%',
-                width: `${progressPercent}%`,
-                background: 'var(--gradient-primary)',
-                borderRadius: 2,
-                position: 'relative',
-              }}>
-                <div style={{
-                  position: 'absolute',
-                  right: -6,
-                  top: '50%',
-                  transform: 'translateY(-50%)',
-                  width: 12,
-                  height: 12,
-                  borderRadius: '50%',
-                  background: 'white',
-                  boxShadow: '0 0 8px rgba(168, 85, 247, 0.4)',
-                }} />
+            {lyricsLoading ? (
+              <div style={{ padding: 'var(--space-3xl)', textAlign: 'center' }}>
+                <div className="spinner" style={{ margin: '0 auto' }} />
+                <p style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', marginTop: 'var(--space-md)' }}>Loading lyrics...</p>
               </div>
-            </div>
-            <div style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              marginTop: 'var(--space-xs)',
-            }}>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
-                {formatTime(progress)}
-              </span>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>
-                {formatTime(duration)}
-              </span>
-            </div>
+            ) : lyrics.length > 0 ? (
+              <div ref={lyricsRef} style={{ maxHeight: '50vh', overflowY: 'auto', scrollBehavior: 'smooth', textAlign: 'center' }}>
+                {lyrics.map((line, i) => (
+                  <p key={i} data-l={i} style={{
+                    fontSize: i === activeLine ? '1.5rem' : '1rem',
+                    fontWeight: i === activeLine ? 700 : 400,
+                    color: i === activeLine ? '#fff' : 'var(--text-tertiary)',
+                    transition: 'all 0.35s var(--ease-out)',
+                    marginBottom: 'var(--space-md)',
+                    opacity: i === activeLine ? 1 : 0.45,
+                    transform: i === activeLine ? 'scale(1.06)' : 'scale(1)',
+                    lineHeight: 1.6,
+                  }}>{line.words}</p>
+                ))}
+              </div>
+            ) : (
+              <div style={{ padding: 'var(--space-3xl)', textAlign: 'center' }}>
+                <p style={{ fontSize: '2rem', marginBottom: 'var(--space-sm)' }}>📝</p>
+                <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>No lyrics available</p>
+              </div>
+            )}
           </div>
+        )}
 
-          {/* Main controls */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 'var(--space-2xl)',
-            marginBottom: 'var(--space-2xl)',
-          }}>
-            <button
-              onClick={toggleShuffle}
-              aria-label="Shuffle"
-              style={{
-                color: shuffle ? 'var(--accent-primary)' : 'var(--text-tertiary)',
-                padding: 'var(--space-sm)',
-                transition: 'color var(--transition-fast)',
-              }}
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="16 3 21 3 21 8" />
-                <line x1="4" y1="20" x2="21" y2="3" />
-                <polyline points="21 16 21 21 16 21" />
-                <line x1="15" y1="15" x2="21" y2="21" />
-                <line x1="4" y1="4" x2="9" y2="9" />
-              </svg>
-            </button>
-
-            <button
-              onClick={previous}
-              aria-label="Previous"
-              style={{ color: 'var(--text-primary)', padding: 'var(--space-sm)' }}
-            >
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M6 6h2v12H6zm3.5 6l8.5 6V6z" />
-              </svg>
-            </button>
-
-            <button
-              onClick={togglePlay}
-              aria-label={isPlaying ? 'Pause' : 'Play'}
-              style={{
-                width: 64,
-                height: 64,
-                borderRadius: '50%',
-                background: 'var(--text-primary)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                color: 'var(--bg-primary)',
-                transition: 'transform var(--transition-fast)',
-              }}
-            >
-              {isPlaying ? (
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" />
-                </svg>
-              ) : (
-                <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M8 5v14l11-7z" />
-                </svg>
-              )}
-            </button>
-
-            <button
-              onClick={next}
-              aria-label="Next"
-              style={{ color: 'var(--text-primary)', padding: 'var(--space-sm)' }}
-            >
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z" />
-              </svg>
-            </button>
-
-            <button
-              onClick={cycleRepeat}
-              aria-label="Repeat"
-              style={{
-                color: repeat !== 'off' ? 'var(--accent-primary)' : 'var(--text-tertiary)',
-                padding: 'var(--space-sm)',
-                transition: 'color var(--transition-fast)',
-                position: 'relative',
-              }}
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <polyline points="17 1 21 5 17 9" />
-                <path d="M3 11V9a4 4 0 0 1 4-4h14" />
-                <polyline points="7 23 3 19 7 15" />
-                <path d="M21 13v2a4 4 0 0 1-4 4H3" />
-              </svg>
-              {repeat === 'one' && (
-                <span style={{
-                  position: 'absolute',
-                  top: 2,
-                  right: 0,
-                  fontSize: '0.5rem',
-                  fontWeight: 700,
-                }}>
-                  1
-                </span>
-              )}
-            </button>
-          </div>
-
-          {/* Like button */}
-          <button
-            onClick={() => {
-              if (isLiked) removeFavorite(currentTrack.id);
-              else addFavorite(currentTrack);
-            }}
-            aria-label={isLiked ? 'Unlike' : 'Like'}
-            style={{
-              color: isLiked ? 'var(--accent-secondary)' : 'var(--text-tertiary)',
-              padding: 'var(--space-sm)',
-              transition: 'all var(--transition-fast)',
-              transform: isLiked ? 'scale(1.1)' : 'scale(1)',
-            }}
-          >
-            <svg width="24" height="24" viewBox="0 0 24 24" fill={isLiked ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2">
-              <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-            </svg>
-          </button>
+        {/* Track info */}
+        <div style={{ textAlign: 'center', width: '100%', marginBottom: 'var(--space-lg)' }}>
+          <h2 style={{
+            fontSize: 'clamp(1.25rem, 4vw, 1.6rem)', fontWeight: 700,
+            color: '#fff', letterSpacing: '-0.02em',
+            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+          }}>{currentTrack.title}</h2>
+          <p style={{ fontSize: '0.9375rem', color: 'var(--text-secondary)', fontWeight: 500, marginTop: 2 }}>
+            {currentTrack.artist}
+          </p>
         </div>
-      )}
 
-      <style>{`
-        @keyframes fadeIn {
-          from { opacity: 0; transform: translateY(20px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes artwork-pulse {
-          0%, 100% { transform: scale(1); }
-          50% { transform: scale(1.01); }
-        }
-        @keyframes spin {
-          from { transform: rotate(0deg); }
-          to { transform: rotate(360deg); }
-        }
-      `}</style>
+        {/* Seek bar */}
+        <div style={{ width: '100%', maxWidth: 480, marginBottom: 'var(--space-xs)' }}>
+          <div onClick={handleSeek} style={{
+            height: 4, background: 'rgba(255,255,255,0.08)', borderRadius: 2, cursor: 'pointer', position: 'relative',
+          }} role="slider" aria-label="Seek" aria-valuenow={Math.round(progress)} aria-valuemin={0} aria-valuemax={Math.round(duration)}>
+            <div style={{ height: '100%', width: `${pct}%`, background: 'var(--gradient-primary)', borderRadius: 2, position: 'relative' }}>
+              <div style={{
+                position: 'absolute', right: -6, top: '50%', transform: 'translateY(-50%)',
+                width: 12, height: 12, borderRadius: '50%', background: '#fff',
+                boxShadow: '0 0 10px rgba(139,92,246,0.4)',
+              }} />
+            </div>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
+            <span style={{ fontSize: '0.6875rem', color: 'var(--text-tertiary)', fontVariantNumeric: 'tabular-nums' }}>{formatTime(progress)}</span>
+            <span style={{ fontSize: '0.6875rem', color: 'var(--text-tertiary)', fontVariantNumeric: 'tabular-nums' }}>{formatTime(duration)}</span>
+          </div>
+        </div>
+
+        {/* Transport */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-xl)', marginBottom: 'var(--space-xl)' }}>
+          <Btn onClick={toggleShuffle} active={shuffle} label="Shuffle">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="16 3 21 3 21 8" /><line x1="4" y1="20" x2="21" y2="3" />
+              <polyline points="21 16 21 21 16 21" /><line x1="15" y1="15" x2="21" y2="21" /><line x1="4" y1="4" x2="9" y2="9" />
+            </svg>
+          </Btn>
+          <Btn onClick={previous} label="Previous">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z" /></svg>
+          </Btn>
+          <button onClick={togglePlay} aria-label={isPlaying ? 'Pause' : 'Play'}
+            style={{
+              width: 60, height: 60, borderRadius: '50%', background: '#fff',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#000',
+              transition: 'transform 80ms var(--ease-spring)',
+            }}
+            onMouseDown={(e) => { e.currentTarget.style.transform = 'scale(0.9)'; }}
+            onMouseUp={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
+            onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
+          >
+            {isPlaying ? (
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z" /></svg>
+            ) : (
+              <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
+            )}
+          </button>
+          <Btn onClick={next} label="Next">
+            <svg width="26" height="26" viewBox="0 0 24 24" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z" /></svg>
+          </Btn>
+          <Btn onClick={cycleRepeat} active={repeat !== 'off'} label="Repeat" badge={repeat === 'one' ? '1' : undefined}>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="17 1 21 5 17 9" /><path d="M3 11V9a4 4 0 0 1 4-4h14" />
+              <polyline points="7 23 3 19 7 15" /><path d="M21 13v2a4 4 0 0 1-4 4H3" />
+            </svg>
+          </Btn>
+        </div>
+
+        {/* Like */}
+        <button onClick={() => { if (isLiked) removeFavorite(currentTrack.id); else addFavorite(currentTrack); }}
+          aria-label={isLiked ? 'Unlike' : 'Like'}
+          style={{
+            color: isLiked ? 'var(--accent-pink)' : 'var(--text-tertiary)',
+            padding: 'var(--space-sm)',
+            transition: 'all 0.25s var(--ease-spring)',
+            transform: isLiked ? 'scale(1.15)' : 'scale(1)',
+          }}>
+          <svg width="22" height="22" viewBox="0 0 24 24" fill={isLiked ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2">
+            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+          </svg>
+        </button>
+      </div>
     </div>
+  );
+}
+
+function Btn({ onClick, active, label, children, badge }: {
+  onClick: () => void; active?: boolean; label: string; children: React.ReactNode; badge?: string;
+}) {
+  return (
+    <button onClick={onClick} aria-label={label} style={{
+      color: active ? 'var(--accent)' : 'var(--text-secondary)',
+      padding: 4, display: 'flex', alignItems: 'center', justifyContent: 'center',
+      position: 'relative', transition: 'color var(--t-fast)',
+    }}>
+      {children}
+      {badge && <span style={{
+        position: 'absolute', top: -1, right: -3, fontSize: '0.45rem', fontWeight: 700, lineHeight: 1,
+        color: active ? 'var(--accent)' : 'var(--text-tertiary)',
+      }}>{badge}</span>}
+    </button>
   );
 }

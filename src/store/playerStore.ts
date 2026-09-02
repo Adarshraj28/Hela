@@ -1,15 +1,28 @@
 import { create } from 'zustand';
 import type { PlayerState, RepeatMode } from '../types';
 
-// Global HTML audio element for actual playback
-let audioElement: HTMLAudioElement | null = null;
-
+// ---- Global Audio Element ----
+let audioEl: HTMLAudioElement | null = null;
 function getAudio(): HTMLAudioElement {
-  if (!audioElement) {
-    audioElement = new Audio();
-    audioElement.preload = 'auto';
+  if (!audioEl) {
+    audioEl = new Audio();
+    audioEl.preload = 'auto';
+    audioEl.crossOrigin = 'anonymous';
   }
-  return audioElement;
+  return audioEl;
+}
+
+// ---- Media Session API (lock screen / OS integration) ----
+function updateMediaSession(track: import('../types').Track | null) {
+  if (!('mediaSession' in navigator) || !track) return;
+  navigator.mediaSession.metadata = new MediaMetadata({
+    title: track.title,
+    artist: track.artist,
+    album: track.album || '',
+    artwork: track.artwork ? [
+      { src: track.artwork, sizes: '512x512', type: 'image/jpeg' },
+    ] : [],
+  });
 }
 
 export const usePlayerStore = create<PlayerState>((set, get) => ({
@@ -30,9 +43,8 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   playTrack: (track, queue, index) => {
     const audio = getAudio();
     const state = get();
-    
-    // If playing the same track, just toggle play
-    if (state.currentTrack?.id === track.id) {
+
+    if (state.currentTrack?.id === track.id && !track.previewUrl?.startsWith('data:')) {
       if (state.isPlaying) {
         audio.pause();
         set({ isPlaying: false });
@@ -44,18 +56,26 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     }
 
     const newQueue = queue || [track];
-    const newIndex = index !== undefined ? index : 0;
+    const newIndex = index !== undefined ? index : newQueue.indexOf(track);
 
-    audio.src = track.previewUrl || '';
+    // Clean up previous listeners
+    audio.ontimeupdate = null;
+    audio.onloadedmetadata = null;
+    audio.onended = null;
+    audio.onwaiting = null;
+    audio.oncanplay = null;
+    audio.onerror = null;
+
+    if (!track.previewUrl) {
+      set({ error: 'No preview available for this track', isLoading: false });
+      return;
+    }
+
+    audio.src = track.previewUrl;
     audio.load();
 
-    audio.play().catch(() => {
-      set({ error: 'Playback failed. No preview available.' });
-    });
-
-    // Set up event listeners
     audio.ontimeupdate = () => {
-      set({ progress: audio.currentTime });
+      if (!audio.paused) set({ progress: audio.currentTime });
     };
     audio.onloadedmetadata = () => {
       set({ duration: audio.duration, isLoading: false });
@@ -71,12 +91,24 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     };
     audio.onwaiting = () => set({ isLoading: true });
     audio.oncanplay = () => set({ isLoading: false });
-    audio.onerror = () => set({ error: 'Failed to load track preview', isLoading: false });
+    audio.onerror = () => set({ error: 'Failed to load preview', isLoading: false });
+
+    audio.play().catch(() => set({ error: 'Playback failed. Try another track.' }));
+
+    updateMediaSession(track);
+
+    // Update Media Session action handlers
+    if ('mediaSession' in navigator) {
+      navigator.mediaSession.setActionHandler('play', () => get().resume());
+      navigator.mediaSession.setActionHandler('pause', () => get().pause());
+      navigator.mediaSession.setActionHandler('previoustrack', () => get().previous());
+      navigator.mediaSession.setActionHandler('nexttrack', () => get().next());
+    }
 
     set({
       currentTrack: track,
       queue: newQueue,
-      queueIndex: newIndex,
+      queueIndex: newIndex >= 0 ? newIndex : 0,
       isPlaying: true,
       progress: 0,
       duration: track.duration || 0,
@@ -87,20 +119,20 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
 
   playQueue: (tracks, startIndex = 0) => {
     if (tracks.length === 0) return;
-    const { playTrack } = get();
-    playTrack(tracks[startIndex], tracks, startIndex);
+    get().playTrack(tracks[startIndex], tracks, startIndex);
   },
 
   togglePlay: () => {
     const { isPlaying, currentTrack, queue } = get();
     if (!currentTrack) return;
-    
+    const audio = getAudio();
+
     if (isPlaying) {
-      getAudio().pause();
+      audio.pause();
       set({ isPlaying: false });
     } else {
-      if (getAudio().src) {
-        getAudio().play().catch(() => set({ error: 'Playback failed' }));
+      if (audio.src) {
+        audio.play().catch(() => set({ error: 'Playback failed' }));
         set({ isPlaying: true });
       } else if (queue.length > 0) {
         get().next();
@@ -108,14 +140,10 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     }
   },
 
-  pause: () => {
-    getAudio().pause();
-    set({ isPlaying: false });
-  },
-
+  pause: () => { getAudio().pause(); set({ isPlaying: false }); },
   resume: () => {
     if (getAudio().src) {
-      getAudio().play().catch(() => set({ error: 'Playback failed' }));
+      getAudio().play().catch(() => {});
       set({ isPlaying: true });
     }
   },
@@ -124,20 +152,17 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     const { queue, queueIndex, shuffle, repeat } = get();
     if (queue.length === 0) return;
 
-    let nextIndex: number;
+    let nextIdx: number;
     if (shuffle) {
-      nextIndex = Math.floor(Math.random() * queue.length);
-      // Avoid same track
-      if (nextIndex === queueIndex && queue.length > 1) {
-        nextIndex = (nextIndex + 1) % queue.length;
-      }
+      nextIdx = Math.floor(Math.random() * queue.length);
+      if (nextIdx === queueIndex && queue.length > 1) nextIdx = (nextIdx + 1) % queue.length;
     } else {
-      nextIndex = queueIndex + 1;
+      nextIdx = queueIndex + 1;
     }
 
-    if (nextIndex >= queue.length) {
+    if (nextIdx >= queue.length) {
       if (repeat === 'all') {
-        nextIndex = 0;
+        nextIdx = 0;
       } else {
         getAudio().pause();
         set({ isPlaying: false, progress: 0 });
@@ -145,104 +170,115 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       }
     }
 
-    get().playTrack(queue[nextIndex], queue, nextIndex);
+    get().playTrack(queue[nextIdx], queue, nextIdx);
   },
 
   previous: () => {
     const { queue, queueIndex, progress } = get();
     if (queue.length === 0) return;
 
-    // If more than 3 seconds in, restart current track
     if (progress > 3) {
       getAudio().currentTime = 0;
       set({ progress: 0 });
       return;
     }
 
-    let prevIndex = queueIndex - 1;
-    if (prevIndex < 0) prevIndex = queue.length - 1;
-
-    get().playTrack(queue[prevIndex], queue, prevIndex);
+    let prevIdx = queueIndex - 1;
+    if (prevIdx < 0) prevIdx = queue.length - 1;
+    get().playTrack(queue[prevIdx], queue, prevIdx);
   },
 
   seek: (time) => {
     const audio = getAudio();
-    if (audio.src) {
-      audio.currentTime = time;
-      set({ progress: time });
-    }
+    if (audio.src) { audio.currentTime = time; set({ progress: time }); }
   },
 
   setVolume: (volume) => {
     const audio = getAudio();
     audio.volume = volume;
     set({ volume, isMuted: volume === 0 });
+    // Persist volume
+    try { localStorage.setItem('freebuff-volume', String(volume)); } catch {}
   },
 
   toggleMute: () => {
     const { isMuted, volume } = get();
     const audio = getAudio();
-    if (isMuted) {
-      audio.volume = volume || 0.8;
-      set({ isMuted: false });
-    } else {
-      audio.volume = 0;
-      set({ isMuted: true });
-    }
+    if (isMuted) { audio.volume = volume || 0.8; set({ isMuted: false }); }
+    else { audio.volume = 0; set({ isMuted: true }); }
   },
 
-  toggleShuffle: () => {
-    set((state) => ({ shuffle: !state.shuffle }));
-  },
+  toggleShuffle: () => set((s) => ({ shuffle: !s.shuffle })),
+  cycleRepeat: () => set((s) => {
+    const modes: RepeatMode[] = ['off', 'all', 'one'];
+    return { repeat: modes[(modes.indexOf(s.repeat) + 1) % modes.length] };
+  }),
 
-  cycleRepeat: () => {
-    set((state) => {
-      const modes: RepeatMode[] = ['off', 'all', 'one'];
-      const currentIndex = modes.indexOf(state.repeat);
-      return { repeat: modes[(currentIndex + 1) % modes.length] };
-    });
-  },
+  setProgress: (p) => set({ progress: p }),
+  setDuration: (d) => set({ duration: d }),
+  setLoading: (l) => set({ isLoading: l }),
+  setError: (e) => set({ error: e }),
+  toggleFullPlayer: () => set((s) => ({ showFullPlayer: !s.showFullPlayer })),
 
-  setProgress: (progress) => set({ progress }),
-  setDuration: (duration) => set({ duration }),
-  setLoading: (loading) => set({ isLoading: loading }),
-  setError: (error) => set({ error }),
-  
-  toggleFullPlayer: () => set((state) => ({ showFullPlayer: !state.showFullPlayer })),
-
-  removeFromQueue: (index) => {
+  removeFromQueue: (idx) => {
     const { queue, queueIndex } = get();
-    const newQueue = queue.filter((_, i) => i !== index);
-    let newIndex = queueIndex;
-    if (index < queueIndex) newIndex--;
-    if (index === queueIndex && newIndex >= newQueue.length) newIndex = newQueue.length - 1;
-    set({ queue: newQueue, queueIndex: Math.max(0, newIndex) });
+    const newQueue = queue.filter((_, i) => i !== idx);
+    let newIdx = queueIndex;
+    if (idx < queueIndex) newIdx--;
+    if (idx === queueIndex) newIdx = Math.min(newIdx, newQueue.length - 1);
+    set({ queue: newQueue, queueIndex: Math.max(0, newIdx) });
   },
 
   clearQueue: () => {
     getAudio().pause();
     set({ queue: [], queueIndex: -1, isPlaying: false, currentTrack: null, progress: 0, duration: 0 });
+    if ('mediaSession' in navigator) navigator.mediaSession.metadata = null;
   },
 
-  reorderQueue: (fromIndex, toIndex) => {
+  reorderQueue: (from, to) => {
     const { queue, queueIndex } = get();
-    const newQueue = [...queue];
-    const [moved] = newQueue.splice(fromIndex, 1);
-    newQueue.splice(toIndex, 0, moved);
-    
-    // Track the current playing item's new index
-    let newIndex = queueIndex;
-    if (fromIndex === queueIndex) {
-      newIndex = toIndex;
-    } else if (fromIndex < queueIndex && toIndex >= queueIndex) {
-      newIndex = queueIndex - 1;
-    } else if (fromIndex > queueIndex && toIndex <= queueIndex) {
-      newIndex = queueIndex + 1;
-    }
-    
-    set({ queue: newQueue, queueIndex: newIndex });
+    const q = [...queue];
+    const [item] = q.splice(from, 1);
+    q.splice(to, 0, item);
+    let newIdx = queueIndex;
+    if (from === queueIndex) newIdx = to;
+    else if (from < queueIndex && to >= queueIndex) newIdx = queueIndex - 1;
+    else if (from > queueIndex && to <= queueIndex) newIdx = queueIndex + 1;
+    set({ queue: q, queueIndex: newIdx });
   },
 }));
 
-// Initialize volume on load
-getAudio().volume = 0.8;
+// Init volume from localStorage
+try {
+  const saved = localStorage.getItem('freebuff-volume');
+  if (saved) getAudio().volume = parseFloat(saved);
+  else getAudio().volume = 0.8;
+} catch { getAudio().volume = 0.8; }
+
+// ---- Keyboard Shortcuts ----
+if (typeof window !== 'undefined') {
+  document.addEventListener('keydown', (e) => {
+    // Ignore if typing in input
+    const tag = (e.target as HTMLElement)?.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || (e.target as HTMLElement)?.contentEditable === 'true') return;
+
+    const store = usePlayerStore.getState();
+    switch (e.code) {
+      case 'Space':
+        e.preventDefault();
+        store.togglePlay();
+        break;
+      case 'KeyM':
+        store.toggleMute();
+        break;
+      case 'ArrowLeft':
+        if (e.shiftKey) store.previous();
+        else store.seek(Math.max(0, store.progress - 10));
+        break;
+      case 'ArrowRight':
+        if (e.shiftKey) store.next();
+        else store.seek(Math.min(store.duration, store.progress + 10));
+        break;
+    }
+  });
+}
