@@ -6,7 +6,7 @@ import { Icon } from './HelaIcons';
 
 export function MiniPlayer() {
   const {
-    currentTrack, isPlaying, progress, duration,
+    currentTrack, isPlaying, progress, duration, error,
     togglePlay, next, toggleFullPlayer,
   } = usePlayerStore();
   const { isFavorite, addFavorite, removeFavorite } = useLibraryStore();
@@ -40,6 +40,21 @@ export function MiniPlayer() {
         role="slider" aria-label="Seek" aria-valuenow={Math.round(progress)} aria-valuemin={0} aria-valuemax={Math.round(duration)}>
         <div style={{ height: '100%', width: `${pct}%`, background: 'var(--gradient-accent)', transition: 'width 0.15s linear' }} />
       </div>
+
+      {/* Error banner */}
+      {error && (
+        <div style={{
+          padding: '2px var(--space-md)', background: 'rgba(239,68,68,0.08)',
+          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          borderBottom: '1px solid rgba(239,68,68,0.08)',
+        }}>
+          <span style={{ fontSize: '0.5625rem', color: '#ef4444', fontFamily: 'var(--font)' }}>{error}</span>
+          <button onClick={togglePlay} style={{
+            fontSize: '0.5625rem', color: 'var(--accent)', fontWeight: 600, fontFamily: 'var(--font)',
+            padding: '2px 6px',
+          }}>Retry</button>
+        </div>
+      )}
 
       {/* Content row */}
       <div style={{ flex: 1, display: 'flex', alignItems: 'center', padding: '0 var(--space-md)', gap: 'var(--space-sm)', minHeight: 0 }}>
