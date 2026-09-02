@@ -1,9 +1,9 @@
 import type { Track, Artist, Album, SearchResult } from '../types';
 
 // ========================================
-// FREEBUFF — Music API Service
+// HELA — Music API Service
 // Deezer API for metadata + preview playback
-// Spotify embed for full-track playback
+// Spotify23 API for lyrics
 // ========================================
 
 const BASE_URL = 'https://api.deezer.com';
@@ -73,8 +73,14 @@ export async function getTrackLyrics(spotifyTrackId: string): Promise<LyricLine[
       }
     );
     if (!response.ok) return [];
-    const data: LyricsResponse = await response.json();
-    return data.lyrics?.lines || [];
+    const data = await response.json();
+    // Spotify23 API may return lyrics in different shapes:
+    // { lyrics: { lines: [...] } } or { status: "success", lyrics: [...] } or { lines: [...] }
+    if (data.lyrics?.lines) return data.lyrics.lines;
+    if (Array.isArray(data.lyrics)) return data.lyrics;
+    if (data.lines) return data.lines;
+    if (data.lyrics?.body?.lyrics?.lines) return data.lyrics.body.lyrics.lines;
+    return [];
   } catch {
     return [];
   }

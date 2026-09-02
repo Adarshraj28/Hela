@@ -12,7 +12,7 @@ import { SectionHeader } from '../components/SectionHeader';
 import { GridSkeleton, SongRowSkeleton } from '../components/Skeleton';
 import { EmptyState } from '../components/EmptyState';
 
-const RECENT_KEY = 'freebuff-recent-searches';
+const RECENT_KEY = 'hela-recent-searches';
 
 function getRecentSearches(): string[] {
   try { return JSON.parse(localStorage.getItem(RECENT_KEY) || '[]'); } catch { return []; }

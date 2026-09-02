@@ -198,7 +198,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     audio.volume = volume;
     set({ volume, isMuted: volume === 0 });
     // Persist volume
-    try { localStorage.setItem('freebuff-volume', String(volume)); } catch {}
+    try { localStorage.setItem('hela-volume', String(volume)); } catch {}
   },
 
   toggleMute: () => {
@@ -250,7 +250,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
 
 // Init volume from localStorage
 try {
-  const saved = localStorage.getItem('freebuff-volume');
+  const saved = localStorage.getItem('hela-volume');
   if (saved) getAudio().volume = parseFloat(saved);
   else getAudio().volume = 0.8;
 } catch { getAudio().volume = 0.8; }

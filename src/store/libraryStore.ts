@@ -78,7 +78,7 @@ export const useLibraryStore = create<LibraryState>()(
       },
     }),
     {
-      name: 'freebuff-library',
+      name: 'hela-library',
     }
   )
 );

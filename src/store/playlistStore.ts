@@ -85,7 +85,7 @@ export const usePlaylistStore = create<PlaylistState>()(
       },
     }),
     {
-      name: 'freebuff-playlists',
+      name: 'hela-playlists',
     }
   )
 );

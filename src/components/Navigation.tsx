@@ -47,9 +47,9 @@ export function Sidebar() {
           background: 'var(--gradient-primary)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           fontSize: '0.875rem', fontWeight: 800, color: '#fff', letterSpacing: '-0.05em',
-        }}>F</div>
+        }}>H</div>
         <span style={{ fontSize: '1.125rem', fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.03em' }}>
-          Freebuff
+          Hela
         </span>
       </div>
 
