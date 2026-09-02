@@ -82,7 +82,7 @@ export function SongRow({
         {/* Artwork */}
         {showArtwork && (
           <div style={{
-            width: 38, height: 38, borderRadius: 'var(--radius-xs)',
+            width: 48, height: 48, borderRadius: 'var(--radius-sm)',
             overflow: 'hidden', flexShrink: 0, background: 'var(--bg-surface)',
           }}>
             <img src={track.artwork} alt="" loading="lazy"
@@ -93,14 +93,14 @@ export function SongRow({
         {/* Title + Artist */}
         <div style={{ flex: 1, minWidth: 0 }}>
           <p style={{
-            fontSize: '0.8125rem', fontWeight: isCurrent ? 600 : 500,
+            fontSize: '0.9375rem', fontWeight: isCurrent ? 600 : 500,
             color: isNowPlaying ? 'var(--accent)' : 'var(--text-primary)',
             overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', lineHeight: 1.3,
             fontFamily: 'var(--font)',
           }}>{track.title}</p>
           <p style={{
-            fontSize: '0.6875rem', color: 'var(--text-secondary)',
-            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', lineHeight: 1.3, marginTop: 1,
+            fontSize: '0.8125rem', color: 'var(--text-secondary)',
+            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', lineHeight: 1.3, marginTop: 2,
             fontFamily: 'var(--font)',
           }}>{track.artist}</p>
         </div>

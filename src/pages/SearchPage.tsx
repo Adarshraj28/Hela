@@ -77,11 +77,11 @@ export function SearchPage() {
           <input type="text" value={query} onChange={(e) => { setQuery(e.target.value); setSearchParams(e.target.value ? { q: e.target.value } : {}); }}
             placeholder="What do you want to play?" autoFocus
             style={{
-              width: '100%', padding: '12px 44px 12px 44px',
+              width: '100%', padding: '14px 48px 14px 48px',
               background: 'var(--bg-surface)', borderRadius: 'var(--radius-full)',
               border: '1px solid var(--border-medium)', color: 'var(--text-primary)',
               backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
-              fontSize: '0.9375rem', outline: 'none',
+              fontSize: '1.0625rem', outline: 'none',
               transition: 'border-color var(--t-fast), box-shadow var(--t-fast)',
             }}
             onFocus={(e) => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.boxShadow = '0 0 0 3px rgba(139,92,246,0.1), 0 0 20px rgba(139,92,246,0.08)'; }}

@@ -65,7 +65,7 @@ export function MiniPlayer() {
         }} aria-label="Open full player">
           {/* Artwork */}
           <div style={{
-            width: 44, height: 44, borderRadius: 'var(--radius-sm)',
+            width: 52, height: 52, borderRadius: 'var(--radius-md)',
             overflow: 'hidden', flexShrink: 0, background: 'var(--bg-surface)',
             boxShadow: '0 2px 8px rgba(0,0,0,0.4)',
           }}>
@@ -73,11 +73,11 @@ export function MiniPlayer() {
           </div>
           <div style={{ minWidth: 0, flex: 1 }}>
             <p style={{
-              fontSize: '0.8125rem', fontWeight: 600, fontFamily: 'var(--font)',
+              fontSize: '0.9375rem', fontWeight: 600, fontFamily: 'var(--font)',
               color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', lineHeight: 1.2,
             }}>{currentTrack.title}</p>
             <p style={{
-              fontSize: '0.6875rem', color: 'var(--text-secondary)', fontFamily: 'var(--font)',
+              fontSize: '0.8125rem', color: 'var(--text-secondary)', fontFamily: 'var(--font)',
               overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', lineHeight: 1.2, marginTop: 2,
             }}>{currentTrack.artist}</p>
           </div>
@@ -94,7 +94,7 @@ export function MiniPlayer() {
         {/* Play/Pause */}
         <button onClick={togglePlay} aria-label={isPlaying ? 'Pause' : 'Play'}
           style={{
-            width: 36, height: 36, borderRadius: '50%', background: '#fff',
+            width: 42, height: 42, borderRadius: '50%', background: '#fff',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             color: '#000', flexShrink: 0,
             boxShadow: '0 2px 12px rgba(255,255,255,0.15), 0 0 20px rgba(139,92,246,0.1)',

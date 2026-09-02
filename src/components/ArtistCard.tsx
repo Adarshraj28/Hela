@@ -12,7 +12,7 @@ export function ArtistCard({ artist, size = 'md' }: ArtistCardProps) {
   const [hovered, setHovered] = useState(false);
   const [imgOk, setImgOk] = useState(false);
 
-  const dims = { sm: 130, md: 160, lg: 200 };
+  const dims = { sm: 150, md: 180, lg: 220 };
 
   return (
     <div

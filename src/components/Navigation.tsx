@@ -41,11 +41,11 @@ export function Sidebar() {
           <NavLink key={path} to={path} end={path === '/'}
             style={({ isActive }) => ({
               display: 'flex', alignItems: 'center', gap: 'var(--space-md)',
-              padding: '9px 12px', borderRadius: 'var(--radius-sm)',
+              padding: '10px 14px', borderRadius: 'var(--radius-sm)',
               color: isActive ? '#fff' : 'var(--text-secondary)',
               background: isActive ? 'rgba(139, 92, 246, 0.08)' : 'transparent',
               boxShadow: isActive ? 'inset 0 0 0 1px rgba(139, 92, 246, 0.08)' : 'none',
-              fontWeight: isActive ? 600 : 400, fontSize: '0.8125rem',
+              fontWeight: isActive ? 600 : 400, fontSize: '0.9375rem',
               transition: 'all var(--t-fast)',
             })}>
             <IconComp size={18} />
@@ -88,8 +88,7 @@ export function MobileNav() {
       {NAV.map(({ path, label, icon: IconComp }) => (
         <NavLink key={path} to={path} end={path === '/'}
           style={({ isActive }) => ({
-            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
-            padding: '6px 0', minWidth: 56,
+            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,              padding: '6px 0', minWidth: 64,
             color: isActive ? '#fff' : 'var(--text-tertiary)',
             transition: 'color var(--t-fast)',
           })}>
@@ -106,7 +105,7 @@ export function MobileNav() {
                 )}
               </div>
               <span style={{
-                fontSize: '0.5625rem', fontWeight: isActive ? 600 : 400,
+                fontSize: '0.625rem', fontWeight: isActive ? 600 : 400,
                 marginTop: isActive ? 2 : 0,
               }}>{label}</span>
             </>

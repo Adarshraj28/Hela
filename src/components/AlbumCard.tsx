@@ -16,7 +16,7 @@ export function AlbumCard({ album, size = 'md' }: AlbumCardProps) {
   const [imgOk, setImgOk] = useState(false);
   const playTrack = usePlayerStore((s) => s.playTrack);
 
-  const dims = { sm: 150, md: 180, lg: 220 };
+  const dims = { sm: 170, md: 200, lg: 240 };
 
   const handlePlay = async (e: React.MouseEvent) => {
     e.stopPropagation();

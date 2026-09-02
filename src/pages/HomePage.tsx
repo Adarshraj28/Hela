@@ -78,7 +78,7 @@ export function HomePage() {
           pointerEvents: 'none',
         }} />
         <h1 style={{
-          fontSize: 'clamp(1.75rem, 5vw, 2.8rem)', fontWeight: 700,
+          fontSize: 'clamp(2rem, 5vw, 3.2rem)', fontWeight: 700,
           color: 'var(--text-primary)', letterSpacing: '-0.035em', lineHeight: 1.1,
           fontFamily: 'var(--font)',
         }}>{getGreeting()}</h1>

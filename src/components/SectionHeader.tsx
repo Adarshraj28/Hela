@@ -14,7 +14,7 @@ export function SectionHeader({ title, subtitle, action }: SectionHeaderProps) {
     }}>
       <div>
         <h2 style={{
-          fontSize: '1.125rem', fontWeight: 700, color: 'var(--text-primary)',
+          fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-primary)',
           letterSpacing: '-0.02em', lineHeight: 1.2, fontFamily: 'var(--font)',
         }}>{title}</h2>
         {subtitle && (
