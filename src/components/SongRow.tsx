@@ -50,28 +50,28 @@ export function SongRow({
         style={{
           display: 'flex', alignItems: 'center',
           gap: showArtwork ? 'var(--space-sm)' : 'var(--space-sm)',
-          padding: '6px 8px', borderRadius: 'var(--radius-sm)',
-          background: hovered ? 'rgba(255,255,255,0.03)' : 'transparent',
-          cursor: 'pointer', transition: 'background var(--t-fast)', minHeight: 46,
+          padding: '8px 10px', borderRadius: 'var(--radius-sm)',
+          background: isNowPlaying ? 'rgba(139,92,246,0.06)' : hovered ? 'rgba(255,255,255,0.03)' : 'transparent',
+          cursor: 'pointer', transition: 'background var(--t-fast)', minHeight: 50,
         }}
       >
         {/* Index / Eq */}
         {showIndex && (
           <div style={{
-            width: 24, textAlign: 'center', fontSize: '0.75rem',
+            width: 28, textAlign: 'center', fontSize: '0.75rem',
             color: isNowPlaying ? 'var(--accent)' : 'var(--text-muted)',
             fontWeight: isNowPlaying ? 600 : 400, fontVariantNumeric: 'tabular-nums',
             flexShrink: 0, fontFamily: 'var(--font)',
           }}>
             {hovered ? (
               <button onClick={play} style={{ color: 'var(--text-primary)', padding: 0, display: 'flex', justifyContent: 'center', width: '100%' }} aria-label="Play">
-                <Icon.Play size={12} />
+                <Icon.Play size={14} />
               </button>
             ) : isNowPlaying ? (
-              <span style={{ display: 'inline-flex', gap: 1.5, alignItems: 'flex-end', height: 12 }}>
-                <span style={{ width: 2, background: 'var(--accent)', borderRadius: 1, animation: 'eq-1 0.5s infinite alternate', height: '30%' }} />
-                <span style={{ width: 2, background: 'var(--accent)', borderRadius: 1, animation: 'eq-2 0.5s 0.15s infinite alternate', height: '75%' }} />
-                <span style={{ width: 2, background: 'var(--accent)', borderRadius: 1, animation: 'eq-3 0.5s 0.3s infinite alternate', height: '40%' }} />
+              <span style={{ display: 'inline-flex', gap: 2, alignItems: 'flex-end', height: 14 }}>
+                <span style={{ width: 2.5, background: 'var(--accent)', borderRadius: 1, animation: 'eq-1 0.5s infinite alternate', height: '30%' }} />
+                <span style={{ width: 2.5, background: 'var(--accent)', borderRadius: 1, animation: 'eq-2 0.5s 0.15s infinite alternate', height: '75%' }} />
+                <span style={{ width: 2.5, background: 'var(--accent)', borderRadius: 1, animation: 'eq-3 0.5s 0.3s infinite alternate', height: '40%' }} />
               </span>
             ) : (
               <span>{index + 1}</span>
@@ -82,8 +82,10 @@ export function SongRow({
         {/* Artwork */}
         {showArtwork && (
           <div style={{
-            width: 48, height: 48, borderRadius: 'var(--radius-sm)',
+            width: 50, height: 50, borderRadius: 'var(--radius-sm)',
             overflow: 'hidden', flexShrink: 0, background: 'var(--bg-surface)',
+            boxShadow: isNowPlaying ? '0 0 12px rgba(139,92,246,0.3)' : 'none',
+            transition: 'box-shadow 0.3s',
           }}>
             <img src={track.artwork} alt="" loading="lazy"
               style={{ width: '100%', height: '100%', objectFit: 'cover' }} />

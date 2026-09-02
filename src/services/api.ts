@@ -201,9 +201,8 @@ export async function getChartTracks(): Promise<Track[]> {
 }
 
 export async function getChartArtists(): Promise<Artist[]> {
-  // Search for songs and extract unique artists from results
-  // This is more reliable than the musicArtist entity
-  const queries = ['taylor swift', 'drake', 'bad bunny', 'the weeknd', 'billie eilish', 'ed sheeran', 'dua lipa', 'post malone', 'ariana grande', 'ariana', 'drake music'];
+  // Search for ALBUMS by artist names — gives better artwork (album covers)
+  const queries = ['taylor swift', 'drake', 'bad bunny', 'the weeknd', 'billie eilish', 'ed sheeran', 'dua lipa', 'post malone', 'ariana grande', 'morgan wallen'];
   const artistSeen = new Set<number>();
   const artists: Artist[] = [];
 
@@ -211,18 +210,17 @@ export async function getChartArtists(): Promise<Artist[]> {
     if (artists.length >= 10) break;
     try {
       const data = await fetchItunes<ItunesSearchResponse>(
-        `/search?term=${encodeURIComponent(q)}&media=music&entity=song&limit=5`
+        `/search?term=${encodeURIComponent(q)}&media=music&entity=album&limit=3`
       );
       for (const t of data.results) {
         if (t.artistId && !artistSeen.has(t.artistId) && artists.length < 10) {
           artistSeen.add(t.artistId);
-          // Use song artwork as artist artwork (more reliable)
-          const artist: Artist = {
+          // Use album artwork as artist artwork — it's larger and more reliable
+          artists.push({
             id: `itunes-${t.artistId}`,
             name: t.artistName,
             artwork: getArtwork(t.artworkUrl100, 300),
-          };
-          artists.push(artist);
+          });
         }
       }
     } catch { continue; }

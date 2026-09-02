@@ -84,33 +84,34 @@ export function MobileNav() {
       {NAV.map(({ path, label, icon: IconComp }) => (
         <NavLink key={path} to={path} end={path === '/'}
           style={({ isActive }) => ({
-            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
-            padding: '8px 0', minWidth: 60,
+            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
+            padding: '6px 0', minWidth: 64,
             color: isActive ? '#fff' : 'var(--text-tertiary)',
             transition: 'color var(--t-fast)',
+            textDecoration: 'none',
           })}>
           {({ isActive }) => (
             <>
               <div style={{
                 position: 'relative',
-                padding: '6px 14px',
+                padding: '8px 20px',
                 borderRadius: 'var(--radius-full)',
-                background: isActive ? 'rgba(139, 92, 246, 0.15)' : 'transparent',
+                background: isActive ? 'rgba(139, 92, 246, 0.18)' : 'transparent',
                 transition: 'all var(--t-fast)',
+                boxShadow: isActive ? '0 0 16px rgba(139,92,246,0.2)' : 'none',
               }}>
                 <IconComp size={22} />
                 {isActive && (
                   <div style={{
-                    position: 'absolute', bottom: -2, left: '50%', transform: 'translateX(-50%)',
+                    position: 'absolute', bottom: -1, left: '50%', transform: 'translateX(-50%)',
                     width: 5, height: 5, borderRadius: '50%',
                     background: 'var(--accent)',
-                    boxShadow: '0 0 8px rgba(139,92,246,0.6)',
+                    boxShadow: '0 0 10px rgba(139,92,246,0.7)',
                   }} />
                 )}
               </div>
               <span style={{
                 fontSize: '0.625rem', fontWeight: isActive ? 600 : 400,
-                marginTop: 2,
               }}>{label}</span>
             </>
           )}

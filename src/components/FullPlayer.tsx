@@ -19,6 +19,7 @@ export function FullPlayer() {
   const touchStartY = useRef(0);
 
   const [view, setView] = useState<'highlight' | 'lyrics' | 'embed'>('highlight');
+  const [imgError, setImgError] = useState(false);
 
   const handleTouchStart = (e: React.TouchEvent) => { touchStartY.current = e.touches[0].clientY; };
   const handleTouchEnd = (e: React.TouchEvent) => {
@@ -32,6 +33,12 @@ export function FullPlayer() {
 
   const isLiked = currentTrack ? isFavorite(currentTrack.id) : false;
   const pct = duration > 0 ? (progress / duration) * 100 : 0;
+
+  // Reset state when track changes
+  useEffect(() => {
+    setImgError(false);
+    setView('highlight');
+  }, [currentTrack?.id]);
 
   useEffect(() => {
     if (currentTrack && isPlaying) addToRecentlyPlayed(currentTrack);
@@ -65,7 +72,8 @@ export function FullPlayer() {
     return () => window.removeEventListener('keydown', h);
   }, [showFullPlayer, toggleFullPlayer]);
 
-  if (!currentTrack || !showFullPlayer) return null;
+  // Critical: return null if not showing OR no track
+  if (!showFullPlayer || !currentTrack) return null;
 
   const handleSeek = (e: React.MouseEvent<HTMLDivElement>) => {
     const r = e.currentTarget.getBoundingClientRect();
@@ -78,9 +86,10 @@ export function FullPlayer() {
     seek(Math.max(0, Math.min(duration, ((touch.clientX - r.left) / r.width) * duration)));
   };
 
+  // Ambient background — always visible, never pure black
   const ambientBg = dominant
-    ? `radial-gradient(ellipse 80% 50% at 50% 30%, ${dominant}40 0%, transparent 70%), var(--bg-base)`
-    : 'var(--bg-base)';
+    ? `radial-gradient(ellipse 80% 50% at 50% 30%, ${dominant}50 0%, transparent 70%), var(--bg-primary)`
+    : 'var(--bg-primary)';
 
   return (
     <div
@@ -108,21 +117,21 @@ export function FullPlayer() {
         <button onClick={toggleFullPlayer} aria-label="Close" className="hover-lift"
           style={{
             width: 44, height: 44, borderRadius: '50%',
-            background: 'rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            background: 'rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center',
             color: 'var(--text-secondary)', transition: 'all var(--t-fast)',
           }}
-          onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; }}
-          onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.12)'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; }}
         >
           <Icon.ChevronDown size={24} />
         </button>
 
-        <div style={{ display: 'flex', gap: 4, background: 'rgba(255,255,255,0.05)', borderRadius: 'var(--radius-full)', padding: 3 }}>
+        <div style={{ display: 'flex', gap: 4, background: 'rgba(255,255,255,0.06)', borderRadius: 'var(--radius-full)', padding: 3 }}>
           {(['highlight', 'lyrics', 'embed'] as const).map((v) => (
             <button key={v} onClick={() => setView(v)} style={{
               padding: '7px 18px', borderRadius: 'var(--radius-full)',
               fontSize: '0.75rem', fontWeight: 600,
-              background: view === v ? 'rgba(255,255,255,0.12)' : 'transparent',
+              background: view === v ? 'rgba(255,255,255,0.14)' : 'transparent',
               color: view === v ? 'var(--text-primary)' : 'var(--text-tertiary)',
               transition: 'all var(--t-fast)',
             }}>{v === 'highlight' ? 'Highlight' : v === 'lyrics' ? 'Lyrics' : 'Video'}</button>
@@ -132,11 +141,11 @@ export function FullPlayer() {
         <button aria-label="More" className="hover-lift"
           style={{
             width: 44, height: 44, borderRadius: '50%',
-            background: 'rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            background: 'rgba(255,255,255,0.08)', display: 'flex', alignItems: 'center', justifyContent: 'center',
             color: 'var(--text-secondary)', transition: 'all var(--t-fast)',
           }}
-          onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; }}
-          onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.12)'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; }}
         >
           <Icon.More size={20} />
         </button>
@@ -157,6 +166,7 @@ export function FullPlayer() {
             <div style={{
               width: 'min(78vw, 340px)', aspectRatio: '1/1',
               borderRadius: 'var(--radius-xl)', overflow: 'hidden',
+              background: 'var(--bg-surface)',
               boxShadow: dominant
                 ? `0 32px 80px ${dominant}45, 0 0 120px ${dominant}12`
                 : '0 32px 80px rgba(0,0,0,0.6)',
@@ -164,8 +174,19 @@ export function FullPlayer() {
               marginBottom: 'var(--space-xl)',
               animation: isPlaying ? 'artworkBreath 6s ease-in-out infinite' : 'none',
             }}>
-              <img src={currentTrack.artwork} alt={currentTrack.title}
-                style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              {!imgError ? (
+                <img src={currentTrack.artwork} alt={currentTrack.title}
+                  onError={() => setImgError(true)}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+              ) : (
+                <div style={{
+                  width: '100%', height: '100%',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  background: 'var(--gradient-accent)',
+                }}>
+                  <Icon.Lyrics size={64} style={{ color: 'rgba(255,255,255,0.3)' }} />
+                </div>
+              )}
             </div>
 
             {/* Track info */}
@@ -183,7 +204,7 @@ export function FullPlayer() {
             <div style={{ width: '100%', maxWidth: 400, marginBottom: 'var(--space-xs)' }}>
               <div onClick={handleSeek} onTouchMove={handleSeekTouch}
                 style={{
-                  height: 4, background: 'rgba(255,255,255,0.08)', borderRadius: 4,
+                  height: 4, background: 'rgba(255,255,255,0.1)', borderRadius: 4,
                   cursor: 'pointer', position: 'relative', touchAction: 'none',
                 }}
                 role="slider" aria-label="Seek" aria-valuenow={Math.round(progress)} aria-valuemin={0} aria-valuemax={Math.round(duration)}>
@@ -269,12 +290,12 @@ export function FullPlayer() {
               <button className="hover-lift" style={{
                 display: 'flex', alignItems: 'center', gap: 'var(--space-sm)',
                 padding: '10px 18px', borderRadius: 'var(--radius-full)',
-                background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)',
+                background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.06)',
                 color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: 500,
                 transition: 'all var(--t-fast)',
               }}
               onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; }}
               >
                 <Icon.Settings size={16} />
                 Equalizer Settings
@@ -282,12 +303,12 @@ export function FullPlayer() {
               <button className="hover-lift" style={{
                 display: 'flex', alignItems: 'center', gap: 'var(--space-sm)',
                 padding: '10px 18px', borderRadius: 'var(--radius-full)',
-                background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)',
+                background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.06)',
                 color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: 500,
                 transition: 'all var(--t-fast)',
               }}
               onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.05)'; }}
               >
                 <Icon.Queue size={16} />
                 Queue List

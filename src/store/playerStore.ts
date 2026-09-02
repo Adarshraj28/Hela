@@ -1,26 +1,32 @@
 import { create } from 'zustand';
 import type { PlayerState, RepeatMode } from '../types';
 
-// ---- Global Audio State ----
-let currentAudio: HTMLAudioElement | null = null;
-let audioContext: AudioContext | null = null;
+// ---- Persistent DOM Audio Element ----
+// Using a real DOM <audio> element (not new Audio()) for reliable mobile playback.
+// Browsers allow play() on DOM audio elements from user gestures.
+let audioEl: HTMLAudioElement | null = null;
 
-function createAndPlay(url: string, volume: number): Promise<HTMLAudioElement> {
+function getAudio(): HTMLAudioElement {
+  if (!audioEl) {
+    audioEl = document.createElement('audio');
+    audioEl.preload = 'auto';
+    document.body.appendChild(audioEl);
+  }
+  return audioEl;
+}
+
+function setAudioSrc(url: string): Promise<void> {
   return new Promise((resolve, reject) => {
-    // Kill any existing audio
-    if (currentAudio) {
-      currentAudio.pause();
-      currentAudio.src = '';
-      currentAudio = null;
-    }
+    const audio = getAudio();
 
-    const audio = new Audio();
-    audio.preload = 'auto';
-    audio.volume = volume;
-    currentAudio = audio;
+    // Clean up old listeners
+    audio.onloadedmetadata = null;
+    audio.onerror = null;
+    audio.oncanplay = null;
 
     audio.onloadedmetadata = () => {
       console.log('[Hela] Audio loaded, duration:', audio.duration);
+      resolve();
     };
 
     audio.onerror = () => {
@@ -29,32 +35,9 @@ function createAndPlay(url: string, volume: number): Promise<HTMLAudioElement> {
       reject(new Error(err?.message || 'Failed to load audio'));
     };
 
-    audio.oncanplay = () => {
-      console.log('[Hela] Audio can play');
-    };
-
     audio.src = url;
     audio.load();
-
-    const playPromise = audio.play();
-    if (playPromise) {
-      playPromise.then(() => resolve(audio)).catch(reject);
-    } else {
-      resolve(audio);
-    }
   });
-}
-
-function stopCurrentAudio() {
-  if (currentAudio) {
-    currentAudio.pause();
-    currentAudio.src = '';
-    currentAudio = null;
-  }
-}
-
-function getCurrentAudio(): HTMLAudioElement | null {
-  return currentAudio;
 }
 
 // ---- Media Session API ----
@@ -94,28 +77,26 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
 
     // Toggle play/pause if same track
     if (state.currentTrack?.id === track.id) {
-      const audio = getCurrentAudio();
-      if (audio) {
-        if (state.isPlaying) {
-          audio.pause();
-          set({ isPlaying: false });
-        } else {
-          audio.play().then(() => set({ isPlaying: true }))
-            .catch((err) => {
-              console.error('[Hela] Resume failed:', err);
-              set({ error: 'Tap to resume', isPlaying: false });
-            });
-        }
-        return;
+      const audio = getAudio();
+      if (state.isPlaying) {
+        audio.pause();
+        set({ isPlaying: false });
+      } else {
+        audio.play().then(() => set({ isPlaying: true }))
+          .catch((err) => {
+            console.error('[Hela] Resume failed:', err);
+            set({ error: 'Tap to resume', isPlaying: false });
+          });
       }
-    }
-
-    if (!track.previewUrl) {
-      set({ error: 'No audio available', isLoading: false });
       return;
     }
 
-    // Set state immediately
+    if (!track.previewUrl) {
+      set({ error: 'No audio available for this track', isLoading: false });
+      return;
+    }
+
+    // Set state immediately — show MiniPlayer right away
     set({
       currentTrack: track,
       queue: newQueue,
@@ -127,40 +108,59 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       isLoading: true,
     });
 
-    // Create fresh audio and play
-    createAndPlay(track.previewUrl, state.isMuted ? 0 : state.volume)
-      .then((audio) => {
-        // Set up time tracking
-        audio.ontimeupdate = () => {
-          if (!audio.paused) set({ progress: audio.currentTime });
-        };
-        audio.onloadedmetadata = () => {
-          set({ duration: audio.duration, isLoading: false });
-        };
-        audio.onended = () => {
-          const s = get();
-          if (s.repeat === 'one') {
-            audio.currentTime = 0;
-            audio.play().catch(() => {});
-          } else {
-            s.next();
-          }
-        };
-        audio.onwaiting = () => set({ isLoading: true });
-        audio.oncanplay = () => set({ isLoading: false });
+    // Set src on the DOM audio element (synchronous), then play
+    const audio = getAudio();
+    audio.volume = state.isMuted ? 0 : state.volume;
 
-        set({ isPlaying: true, isLoading: false });
-        console.log('[Hela] Now playing:', track.title);
-        updateMediaSession(track);
-      })
-      .catch((err) => {
-        console.error('[Hela] Play failed:', err.message);
-        set({
-          error: `Playback failed: ${err.message}`,
-          isPlaying: false,
-          isLoading: false,
+    // Set up event handlers BEFORE setting src
+    audio.ontimeupdate = () => {
+      if (!audio.paused) set({ progress: audio.currentTime });
+    };
+    audio.onloadedmetadata = () => {
+      set({ duration: audio.duration, isLoading: false });
+    };
+    audio.onended = () => {
+      const s = get();
+      if (s.repeat === 'one') {
+        audio.currentTime = 0;
+        audio.play().catch(() => {});
+      } else {
+        s.next();
+      }
+    };
+    audio.onwaiting = () => set({ isLoading: true });
+    audio.oncanplay = () => set({ isLoading: false });
+    audio.onerror = () => {
+      const err = audio.error;
+      console.error('[Hela] Audio error during playback:', err?.code, err?.message);
+      set({ error: `Playback error: ${err?.message || 'Unknown'}`, isPlaying: false, isLoading: false });
+    };
+
+    // Set src and play — must be in the same synchronous block for autoplay policy
+    audio.src = track.previewUrl;
+    audio.load();
+
+    const playPromise = audio.play();
+    if (playPromise) {
+      playPromise
+        .then(() => {
+          set({ isPlaying: true, isLoading: false });
+          console.log('[Hela] Now playing:', track.title);
+          updateMediaSession(track);
+        })
+        .catch((err) => {
+          console.error('[Hela] Play failed:', err.message);
+          // On mobile, autoplay might be blocked. Show clear error.
+          set({
+            error: 'Tap play to start listening',
+            isPlaying: false,
+            isLoading: false,
+          });
         });
-      });
+    } else {
+      set({ isPlaying: true, isLoading: false });
+      updateMediaSession(track);
+    }
 
     // Media Session action handlers
     if ('mediaSession' in navigator) {
@@ -179,34 +179,34 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   togglePlay: () => {
     const { isPlaying, currentTrack } = get();
     if (!currentTrack) return;
-    const audio = getCurrentAudio();
+    const audio = getAudio();
 
     if (isPlaying) {
-      if (audio) audio.pause();
+      audio.pause();
       set({ isPlaying: false });
     } else {
-      if (audio && audio.src) {
+      if (audio.src) {
         audio.play().then(() => set({ isPlaying: true }))
           .catch((err) => {
             console.error('[Hela] Toggle play failed:', err);
             set({ error: 'Tap to play', isPlaying: false });
           });
       } else {
-        // No audio element — re-play from track
+        // No source — re-play from track
         get().playTrack(currentTrack, get().queue, get().queueIndex);
       }
     }
   },
 
   pause: () => {
-    const audio = getCurrentAudio();
-    if (audio) audio.pause();
+    const audio = getAudio();
+    audio.pause();
     set({ isPlaying: false });
   },
 
   resume: () => {
-    const audio = getCurrentAudio();
-    if (audio) {
+    const audio = getAudio();
+    if (audio.src) {
       audio.play().then(() => set({ isPlaying: true })).catch(() => {});
     } else if (get().currentTrack) {
       get().playTrack(get().currentTrack!, get().queue, get().queueIndex);
@@ -229,7 +229,8 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       if (repeat === 'all') {
         nextIdx = 0;
       } else {
-        stopCurrentAudio();
+        const audio = getAudio();
+        audio.pause();
         set({ isPlaying: false, progress: 0 });
         return;
       }
@@ -243,8 +244,8 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     if (queue.length === 0) return;
 
     if (progress > 3) {
-      const audio = getCurrentAudio();
-      if (audio) { audio.currentTime = 0; }
+      const audio = getAudio();
+      audio.currentTime = 0;
       set({ progress: 0 });
       return;
     }
@@ -255,21 +256,22 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   },
 
   seek: (time) => {
-    const audio = getCurrentAudio();
-    if (audio) { audio.currentTime = time; set({ progress: time }); }
+    const audio = getAudio();
+    audio.currentTime = time;
+    set({ progress: time });
   },
 
   setVolume: (volume) => {
-    const audio = getCurrentAudio();
-    if (audio) audio.volume = volume;
+    const audio = getAudio();
+    audio.volume = volume;
     set({ volume, isMuted: volume === 0 });
     try { localStorage.setItem('hela-volume', String(volume)); } catch {}
   },
 
   toggleMute: () => {
     const { isMuted, volume } = get();
-    const audio = getCurrentAudio();
-    if (audio) audio.volume = isMuted ? (volume || 0.8) : 0;
+    const audio = getAudio();
+    audio.volume = isMuted ? (volume || 0.8) : 0;
     set({ isMuted: !isMuted });
   },
 
@@ -295,7 +297,9 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   },
 
   clearQueue: () => {
-    stopCurrentAudio();
+    const audio = getAudio();
+    audio.pause();
+    audio.src = '';
     set({ queue: [], queueIndex: -1, isPlaying: false, currentTrack: null, progress: 0, duration: 0 });
     if ('mediaSession' in navigator) navigator.mediaSession.metadata = null;
   },

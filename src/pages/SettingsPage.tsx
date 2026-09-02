@@ -178,40 +178,6 @@ export function SettingsPage() {
         </div>
       </section>
 
-      {/* Audio Test */}
-      <section style={{ marginBottom: 'var(--space-xl)' }}>
-        <h2 style={{
-          fontSize: '0.6875rem', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase',
-          color: 'var(--text-tertiary)', marginBottom: 'var(--space-md)',
-        }}>Audio Test</h2>
-        <div style={{
-          borderRadius: 'var(--radius-md)', overflow: 'hidden',
-          border: '1px solid var(--border-subtle)',
-        }}>
-          <div style={{ padding: 'var(--space-md)', background: 'rgba(255,255,255,0.01)' }}>
-            <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', marginBottom: 'var(--space-sm)' }}>
-              If songs won't play, tap the button below to test audio playback.
-            </p>
-            <button onClick={() => {
-              const testUrl = 'https://audio-ssl.itunes.apple.com/itunes-assets/AudioPreview211/v4/17/b4/8f/17b48f9a-0b93-6bb8-fe1d-3a16623c2cfb/mzaf_9560252727299052414.plus.aac.p.m4a';
-              const a = new Audio(testUrl);
-              a.volume = 0.5;
-              a.play().then(() => {
-                alert('Audio works! You should hear music. Close this dialog and try playing a song from the home page.');
-              }).catch((err) => {
-                alert('Audio blocked: ' + err.message + '\n\nThis usually means your browser blocks autoplay. Try:\n1. Click this button again\n2. Then immediately click a song on the home page');
-              });
-            }}
-              style={{
-                padding: '8px 16px', borderRadius: 'var(--radius-full)',
-                background: 'var(--accent)', color: '#fff', fontWeight: 600, fontSize: '0.8125rem',
-              }}>
-              Test Audio Playback
-            </button>
-          </div>
-        </div>
-      </section>
-
       {/* Library Stats */}
       <section style={{ marginBottom: 'var(--space-xl)' }}>
         <h2 style={{
