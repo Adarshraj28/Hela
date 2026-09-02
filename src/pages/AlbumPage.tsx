@@ -63,13 +63,13 @@ export function AlbumPage() {
             height: 232,
             borderRadius: 'var(--radius-lg)',
             background: 'var(--bg-surface)',
-            animation: 'skeleton-shimmer 1.5s infinite',
+            animation: 'shimmer 1.5s infinite',
             backgroundSize: '200% 100%',
           }} />
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', gap: 'var(--space-sm)' }}>
-            <div style={{ width: 60, height: 14, background: 'var(--bg-surface)', borderRadius: 4, animation: 'skeleton-shimmer 1.5s infinite', backgroundSize: '200% 100%' }} />
-            <div style={{ width: '70%', height: 32, background: 'var(--bg-surface)', borderRadius: 4, animation: 'skeleton-shimmer 1.5s infinite', backgroundSize: '200% 100%' }} />
-            <div style={{ width: '50%', height: 16, background: 'var(--bg-surface)', borderRadius: 4, animation: 'skeleton-shimmer 1.5s infinite', backgroundSize: '200% 100%' }} />
+            <div style={{ width: 60, height: 14, background: 'var(--bg-surface)', borderRadius: 4, animation: 'shimmer 1.5s infinite', backgroundSize: '200% 100%' }} />
+            <div style={{ width: '70%', height: 32, background: 'var(--bg-surface)', borderRadius: 4, animation: 'shimmer 1.5s infinite', backgroundSize: '200% 100%' }} />
+            <div style={{ width: '50%', height: 16, background: 'var(--bg-surface)', borderRadius: 4, animation: 'shimmer 1.5s infinite', backgroundSize: '200% 100%' }} />
           </div>
         </div>
         {Array.from({ length: 8 }).map((_, i) => <SongRowSkeleton key={i} />)}
@@ -96,7 +96,7 @@ export function AlbumPage() {
           style={{
             padding: 'var(--space-sm) var(--space-lg)',
             borderRadius: 'var(--radius-full)',
-            background: 'var(--accent-primary)',
+            background: 'var(--accent)',
             color: 'white',
             fontWeight: 600,
           }}
@@ -218,12 +218,12 @@ export function AlbumPage() {
             width: 52,
             height: 52,
             borderRadius: '50%',
-            background: 'var(--accent-primary)',
+            background: 'var(--accent)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             boxShadow: '0 4px 16px rgba(168, 85, 247, 0.3)',
-            transition: 'transform var(--transition-fast)',
+            transition: 'transform var(--t-fast)',
           }}
         >
           <svg width="22" height="22" viewBox="0 0 24 24" fill="white">
@@ -243,7 +243,7 @@ export function AlbumPage() {
             alignItems: 'center',
             justifyContent: 'center',
             color: 'var(--text-secondary)',
-            transition: 'all var(--transition-fast)',
+            transition: 'all var(--t-fast)',
           }}
         >
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -262,9 +262,9 @@ export function AlbumPage() {
           }}
           aria-label={isLiked ? 'Remove from library' : 'Add to library'}
           style={{
-            color: isLiked ? 'var(--accent-secondary)' : 'var(--text-tertiary)',
+            color: isLiked ? 'var(--accent-pink)' : 'var(--text-tertiary)',
             padding: 'var(--space-sm)',
-            transition: 'color var(--transition-fast)',
+            transition: 'color var(--t-fast)',
           }}
         >
           <svg width="22" height="22" viewBox="0 0 24 24" fill={isLiked ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2">

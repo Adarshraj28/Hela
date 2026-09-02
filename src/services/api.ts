@@ -2,8 +2,8 @@ import type { Track, Artist, Album, SearchResult } from '../types';
 
 // ========================================
 // HELA — Music API Service
-// Primary: iTunes Search API (free, CORS-friendly, real previews)
-// Fallback: Deezer API (album tracks)
+// Metadata: iTunes Search API (global, CORS-friendly)
+// Full playback: Apple Music embed (plays full songs)
 // Lyrics: Spotify23 via RapidAPI
 // ========================================
 
@@ -21,17 +21,12 @@ interface ItunesTrack {
   collectionName: string;
   trackName: string;
   previewUrl: string;
-  artworkUrl30: string;
-  artworkUrl60: string;
   artworkUrl100: string;
-  artworkUrl600?: string;
   releaseDate: string;
   trackTimeMillis: number;
   trackNumber: number;
-  discNumber: number;
   trackCount?: number;
   primaryGenreName: string;
-  isStreamable: boolean;
 }
 
 interface ItunesSearchResponse {
@@ -41,9 +36,17 @@ interface ItunesSearchResponse {
 
 // ---- Transformers ----
 
-function getArtwork(artworkUrl100: string, size: number = 300): string {
-  // Replace 100x100 with larger size
-  return artworkUrl100.replace(/100x100bb/, `${size}x${size}bb`);
+function getArtwork(url: string, size: number = 300): string {
+  return url.replace(/100x100bb/, `${size}x${size}bb`);
+}
+
+/**
+ * Build an Apple Music embed URL from iTunes track data.
+ * iTunes and Apple Music share the same ID system, so we can construct
+ * the embed URL directly — this plays FULL songs.
+ */
+function getAppleMusicEmbedUrl(trackId: number, collectionId: number): string {
+  return `https://embed.music.apple.com/us/album/${collectionId}?i=${trackId}`;
 }
 
 function transformTrack(it: ItunesTrack): Track {
@@ -57,6 +60,9 @@ function transformTrack(it: ItunesTrack): Track {
     artwork: getArtwork(it.artworkUrl100, 300),
     duration: it.trackTimeMillis ? Math.floor(it.trackTimeMillis / 1000) : 0,
     previewUrl: it.previewUrl,
+    appleMusicEmbedUrl: getAppleMusicEmbedUrl(it.trackId, it.collectionId),
+    appleMusicTrackId: it.trackId,
+    appleMusicCollectionId: it.collectionId,
     trackNumber: it.trackNumber,
     releaseDate: it.releaseDate,
   };
@@ -101,7 +107,7 @@ export async function searchTracks(query: string): Promise<Track[]> {
     `/search?term=${encodeURIComponent(query)}&media=music&entity=song&limit=25`
   );
   return data.results
-    .filter((t) => t.previewUrl && t.kind === 'song')
+    .filter((t) => t.kind === 'song')
     .map(transformTrack);
 }
 
@@ -110,7 +116,6 @@ export async function searchArtists(query: string): Promise<Artist[]> {
   const data = await fetchItunes<ItunesSearchResponse>(
     `/search?term=${encodeURIComponent(query)}&media=music&entity=musicArtist&limit=20`
   );
-  // Group by artistId to get unique artists with their artwork
   const artistMap = new Map<number, ItunesTrack[]>();
   for (const t of data.results) {
     if (!t.artistId) continue;
@@ -130,7 +135,6 @@ export async function searchAlbums(query: string): Promise<Album[]> {
   const data = await fetchItunes<ItunesSearchResponse>(
     `/search?term=${encodeURIComponent(query)}&media=music&entity=album&limit=20`
   );
-  // Group by collectionId
   const albumMap = new Map<number, ItunesTrack[]>();
   for (const t of data.results) {
     if (!t.collectionId) continue;
@@ -151,10 +155,9 @@ export async function searchAll(query: string): Promise<SearchResult> {
     `/search?term=${encodeURIComponent(query)}&media=music&limit=50`
   );
   const allTracks = data.results
-    .filter((t) => t.previewUrl && t.kind === 'song')
+    .filter((t) => t.kind === 'song')
     .map(transformTrack);
 
-  // Extract unique artists
   const artistSeen = new Set<number>();
   const artists: Artist[] = [];
   for (const t of data.results) {
@@ -165,7 +168,6 @@ export async function searchAll(query: string): Promise<SearchResult> {
     }
   }
 
-  // Extract unique albums
   const albumSeen = new Set<number>();
   const albums: Album[] = [];
   for (const t of data.results) {
@@ -179,48 +181,69 @@ export async function searchAll(query: string): Promise<SearchResult> {
   return { tracks: allTracks.slice(0, 25), artists: artists.slice(0, 10), albums: albums.slice(0, 10) };
 }
 
-// Get trending/popular tracks using genre searches
+// ---- Home page data ----
+
+const TRENDING_QUERIES = ['top hits 2024', 'billboard hot 100', 'popular songs', 'chart toppers'];
+
 export async function getChartTracks(): Promise<Track[]> {
-  const genres = ['pop', 'hip-hop', 'rock', 'r&b', 'latin'];
-  const randomGenre = genres[Math.floor(Math.random() * genres.length)];
-  const data = await fetchItunes<ItunesSearchResponse>(
-    `/search?term=${randomGenre}&media=music&entity=song&limit=25&sort=popular`
-  );
-  return data.results
-    .filter((t) => t.previewUrl && t.kind === 'song')
-    .map(transformTrack);
+  for (const query of TRENDING_QUERIES) {
+    try {
+      const data = await fetchItunes<ItunesSearchResponse>(
+        `/search?term=${encodeURIComponent(query)}&media=music&entity=song&limit=25`
+      );
+      const tracks = data.results
+        .filter((t) => t.kind === 'song')
+        .map(transformTrack);
+      if (tracks.length > 0) return tracks;
+    } catch { continue; }
+  }
+  return [];
 }
 
 export async function getChartArtists(): Promise<Artist[]> {
-  const data = await fetchItunes<ItunesSearchResponse>(
-    `/search?term=trending+2024&media=music&entity=musicArtist&limit=20`
-  );
+  const queries = ['taylor swift', 'drake', 'bad bunny', 'the weeknd', 'billie eilish', 'ed sheeran', 'dua lipa', 'post malone'];
   const artistSeen = new Set<number>();
   const artists: Artist[] = [];
-  for (const t of data.results) {
-    if (t.artistId && !artistSeen.has(t.artistId)) {
-      artistSeen.add(t.artistId);
-      const artist = transformArtistFromTracks([t]);
-      if (artist) artists.push(artist);
-    }
+
+  for (const q of queries) {
+    if (artists.length >= 12) break;
+    try {
+      const data = await fetchItunes<ItunesSearchResponse>(
+        `/search?term=${encodeURIComponent(q)}&media=music&entity=musicArtist&limit=5`
+      );
+      for (const t of data.results) {
+        if (t.artistId && !artistSeen.has(t.artistId) && artists.length < 12) {
+          artistSeen.add(t.artistId);
+          const artist = transformArtistFromTracks([t]);
+          if (artist) artists.push(artist);
+        }
+      }
+    } catch { continue; }
   }
-  return artists.slice(0, 20);
+  return artists;
 }
 
 export async function getChartAlbums(): Promise<Album[]> {
-  const data = await fetchItunes<ItunesSearchResponse>(
-    `/search?term=top+hits&media=music&entity=album&limit=20`
-  );
+  const queries = ['trending albums 2024', 'new music albums', 'popular albums'];
   const albumSeen = new Set<number>();
   const albums: Album[] = [];
-  for (const t of data.results) {
-    if (t.collectionId && !albumSeen.has(t.collectionId)) {
-      albumSeen.add(t.collectionId);
-      const album = transformAlbumFromTracks([t]);
-      if (album) albums.push(album);
-    }
+
+  for (const q of queries) {
+    if (albums.length >= 12) break;
+    try {
+      const data = await fetchItunes<ItunesSearchResponse>(
+        `/search?term=${encodeURIComponent(q)}&media=music&entity=album&limit=10`
+      );
+      for (const t of data.results) {
+        if (t.collectionId && !albumSeen.has(t.collectionId) && albums.length < 12) {
+          albumSeen.add(t.collectionId);
+          const album = transformAlbumFromTracks([t]);
+          if (album) albums.push(album);
+        }
+      }
+    } catch { continue; }
   }
-  return albums.slice(0, 20);
+  return albums;
 }
 
 export async function getArtist(id: string): Promise<Artist> {
@@ -240,7 +263,7 @@ export async function getArtistTopTracks(id: string): Promise<Track[]> {
     `/lookup?id=${numericId}&entity=song&limit=10`
   );
   return data.results
-    .filter((t) => t.previewUrl && t.kind === 'song')
+    .filter((t) => t.kind === 'song')
     .map(transformTrack);
 }
 
@@ -278,7 +301,7 @@ export async function getAlbumTracks(id: string): Promise<Track[]> {
     `/lookup?id=${numericId}&entity=song`
   );
   return data.results
-    .filter((t) => t.previewUrl && t.kind === 'song')
+    .filter((t) => t.kind === 'song')
     .sort((a, b) => a.trackNumber - b.trackNumber)
     .map(transformTrack);
 }
@@ -315,7 +338,6 @@ export async function getTrackLyrics(spotifyTrackId: string): Promise<LyricLine[
     if (data.lyrics?.lines) return data.lyrics.lines;
     if (Array.isArray(data.lyrics)) return data.lyrics;
     if (data.lines) return data.lines;
-    if (data.lyrics?.body?.lyrics?.lines) return data.lyrics.body.lyrics.lines;
     return [];
   } catch {
     return [];

@@ -99,10 +99,6 @@ export function MiniPlayer() {
       </div>
 
       <style>{`
-        input[type="range"]::-webkit-slider-thumb {
-          -webkit-appearance: none; width: 10px; height: 10px; border-radius: 50%;
-          background: #fff; cursor: pointer; box-shadow: 0 0 4px rgba(0,0,0,0.4);
-        }
         @media (max-width: 768px) {
           .mini-player { height: var(--player-height-mobile) !important; }
         }

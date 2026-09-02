@@ -1,5 +1,5 @@
 // ========================================
-// FREEBUFF — TypeScript Types
+// HELA — TypeScript Types
 // ========================================
 
 // Track / Song
@@ -13,7 +13,9 @@ export interface Track {
   artwork: string;
   duration?: number; // seconds
   previewUrl?: string;
-  embedUrl?: string;
+  appleMusicEmbedUrl?: string;
+  appleMusicTrackId?: number;
+  appleMusicCollectionId?: number;
   genre?: string;
   releaseDate?: string;
   trackNumber?: number;

@@ -90,7 +90,7 @@ export function AddToPlaylistModal({ track, onClose }: AddToPlaylistModalProps) 
                     marginBottom: 'var(--space-xs)',
                     opacity: alreadyAdded ? 0.5 : 1,
                     cursor: alreadyAdded ? 'default' : 'pointer',
-                    transition: 'background var(--transition-fast)',
+                    transition: 'background var(--t-fast)',
                     textAlign: 'left',
                   }}
                 >
@@ -137,7 +137,7 @@ export function AddToPlaylistModal({ track, onClose }: AddToPlaylistModalProps) 
               color: 'var(--text-secondary)',
               fontSize: '0.875rem',
               justifyContent: 'center',
-              transition: 'all var(--transition-fast)',
+              transition: 'all var(--t-fast)',
             }}
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -171,7 +171,7 @@ export function AddToPlaylistModal({ track, onClose }: AddToPlaylistModalProps) 
               style={{
                 padding: 'var(--space-sm) var(--space-md)',
                 borderRadius: 'var(--radius-md)',
-                background: newPlaylistName.trim() ? 'var(--accent-primary)' : 'var(--bg-surface)',
+                background: newPlaylistName.trim() ? 'var(--accent)' : 'var(--bg-surface)',
                 color: 'white',
                 fontSize: '0.875rem',
                 fontWeight: 600,
@@ -192,7 +192,7 @@ export function AddToPlaylistModal({ track, onClose }: AddToPlaylistModalProps) 
             borderRadius: 'var(--radius-md)',
             color: 'var(--text-secondary)',
             fontSize: '0.875rem',
-            transition: 'color var(--transition-fast)',
+            transition: 'color var(--t-fast)',
           }}
         >
           Cancel

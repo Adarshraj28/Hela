@@ -5,6 +5,7 @@ import { useDominantColor } from '../hooks/useDominantColor';
 import { formatTime } from '../utils/formatTime';
 import { getTrackLyrics, type LyricLine } from '../services/api';
 import { Icon } from './HelaIcons';
+import { AppleMusicEmbed } from './AppleMusicEmbed';
 
 export function FullPlayer() {
   const {
@@ -16,7 +17,7 @@ export function FullPlayer() {
   const dominant = useDominantColor(currentTrack?.artwork);
   const lyricsRef = useRef<HTMLDivElement>(null);
 
-  const [view, setView] = useState<'cover' | 'lyrics'>('cover');
+  const [view, setView] = useState<'cover' | 'lyrics' | 'player'>('cover');
   const [lyrics, setLyrics] = useState<LyricLine[]>([]);
   const [lyricsLoading, setLyricsLoading] = useState(false);
   const [activeLine, setActiveLine] = useState(-1);
@@ -36,7 +37,7 @@ export function FullPlayer() {
     if (!currentTrack || view !== 'lyrics') return;
     setLyricsLoading(true);
     setLyrics([]);
-    getTrackLyrics(currentTrack.id.replace('dz-', ''))
+    getTrackLyrics(currentTrack.id.replace('itunes-', ''))
       .then(setLyrics)
       .catch(() => setLyrics([]))
       .finally(() => setLyricsLoading(false));
@@ -88,7 +89,7 @@ export function FullPlayer() {
 
       {/* ---- Top bar ---- */}
       <div style={{
-        width: '100%', maxWidth: 520,
+        width: '100%', maxWidth: 560,
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         padding: 'var(--space-md) var(--space-lg)',
         position: 'sticky', top: 0, zIndex: 10,
@@ -101,14 +102,14 @@ export function FullPlayer() {
           <Icon.ChevronDown size={22} />
         </button>
         <div style={{ display: 'flex', gap: 2, background: 'rgba(255,255,255,0.05)', borderRadius: 'var(--radius-full)', padding: 2 }}>
-          {(['cover', 'lyrics'] as const).map((v) => (
+          {(['cover', 'player', 'lyrics'] as const).map((v) => (
             <button key={v} onClick={() => setView(v)} style={{
               padding: '4px 12px', borderRadius: 'var(--radius-full)',
               fontSize: '0.625rem', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase',
               background: view === v ? 'rgba(255,255,255,0.1)' : 'transparent',
               color: view === v ? 'var(--text-primary)' : 'var(--text-tertiary)',
               transition: 'all var(--t-fast)',
-            }}>{v === 'cover' ? 'Cover' : 'Lyrics'}</button>
+            }}>{v === 'cover' ? 'Cover' : v === 'player' ? 'Full Play' : 'Lyrics'}</button>
           ))}
         </div>
         <div style={{ width: 40 }} />
@@ -117,14 +118,14 @@ export function FullPlayer() {
       {/* ---- Content ---- */}
       <div style={{
         flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',
-        width: '100%', maxWidth: 520,
+        width: '100%', maxWidth: 560,
         padding: '0 var(--space-xl)',
         justifyContent: view === 'lyrics' ? 'flex-start' : 'center',
       }}>
 
-        {view === 'cover' ? (
+        {/* ===== COVER VIEW ===== */}
+        {view === 'cover' && (
           <>
-            {/* NOW PLAYING */}
             <p style={{
               fontSize: '0.5625rem', fontWeight: 700, letterSpacing: '0.2em',
               textTransform: 'uppercase', color: 'var(--text-tertiary)', marginBottom: 'var(--space-xl)',
@@ -144,47 +145,7 @@ export function FullPlayer() {
               <img src={currentTrack.artwork} alt={currentTrack.title}
                 style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'opacity 0.4s' }} />
             </div>
-          </>
-        ) : (
-          /* Lyrics view */
-          <div style={{ width: '100%', paddingTop: 'var(--space-lg)', paddingBottom: '50vh' }}>
-            <h2 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 2, textAlign: 'center' }}>
-              {currentTrack.title}
-            </h2>
-            <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginBottom: 'var(--space-xl)', textAlign: 'center' }}>
-              {currentTrack.artist}
-            </p>
-            {lyricsLoading ? (
-              <div style={{ padding: 'var(--space-3xl)', textAlign: 'center' }}>
-                <div className="spinner" style={{ margin: '0 auto' }} />
-                <p style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', marginTop: 'var(--space-md)' }}>Loading lyrics...</p>
-              </div>
-            ) : lyrics.length > 0 ? (
-              <div ref={lyricsRef} style={{ maxHeight: '55vh', overflowY: 'auto', scrollBehavior: 'smooth', textAlign: 'center', padding: 'var(--space-md) 0' }}>
-                {lyrics.map((line, i) => (
-                  <p key={i} data-l={i} style={{
-                    fontSize: i === activeLine ? '1.35rem' : '0.9375rem',
-                    fontWeight: i === activeLine ? 700 : 400,
-                    color: i === activeLine ? '#fff' : 'var(--text-tertiary)',
-                    transition: 'all 0.35s var(--ease-out)',
-                    marginBottom: 'var(--space-md)',
-                    opacity: i === activeLine ? 1 : 0.4,
-                    transform: i === activeLine ? 'scale(1.04)' : 'scale(1)',
-                    lineHeight: 1.7,
-                  }}>{line.words}</p>
-                ))}
-              </div>
-            ) : (
-              <div style={{ padding: 'var(--space-3xl)', textAlign: 'center' }}>
-                <Icon.Lyrics size={32} style={{ color: 'var(--text-muted)', margin: '0 auto var(--space-md)' }} />
-                <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>No lyrics available</p>
-              </div>
-            )}
-          </div>
-        )}
 
-        {view === 'cover' && (
-          <>
             {/* Track info */}
             <div style={{ textAlign: 'center', width: '100%', marginBottom: 'var(--space-lg)' }}>
               <h2 style={{
@@ -215,7 +176,7 @@ export function FullPlayer() {
               </div>
             </div>
 
-            {/* Transport controls — THE visual anchor */}
+            {/* Transport controls */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-xl)', marginBottom: 'var(--space-xl)' }}>
               <CtrlBtn onClick={toggleShuffle} active={shuffle} label="Shuffle">
                 <Icon.Shuffle size={18} />
@@ -224,7 +185,7 @@ export function FullPlayer() {
                 <Icon.Previous size={26} />
               </CtrlBtn>
 
-              {/* Large play button — signature element */}
+              {/* Large play button */}
               <button onClick={togglePlay} aria-label={isPlaying ? 'Pause' : 'Play'}
                 style={{
                   width: 64, height: 64, borderRadius: '50%',
@@ -264,16 +225,101 @@ export function FullPlayer() {
                 style={{ color: 'var(--text-tertiary)', padding: 'var(--space-xs)' }}>
                 <Icon.Lyrics size={20} />
               </button>
-              <button aria-label="Queue"
+              <button aria-label="Full Play" onClick={() => setView('player')}
                 style={{ color: 'var(--text-tertiary)', padding: 'var(--space-xs)' }}>
-                <Icon.Queue size={20} />
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10" /><polygon points="10 8 16 12 10 16 10 8" fill="currentColor" />
+                </svg>
               </button>
               <button aria-label="Share"
+                onClick={() => {
+                  if (navigator.share) navigator.share({ title: currentTrack.title, text: `${currentTrack.title} by ${currentTrack.artist}` });
+                }}
                 style={{ color: 'var(--text-tertiary)', padding: 'var(--space-xs)' }}>
                 <Icon.Share size={20} />
               </button>
             </div>
           </>
+        )}
+
+        {/* ===== FULL PLAY (EMBED) VIEW ===== */}
+        {view === 'player' && (
+          <div style={{ width: '100%', paddingTop: 'var(--space-lg)' }}>
+            <p style={{
+              fontSize: '0.5625rem', fontWeight: 700, letterSpacing: '0.2em',
+              textTransform: 'uppercase', color: 'var(--text-tertiary)', marginBottom: 'var(--space-md)',
+              textAlign: 'center',
+            }}>Full Player</p>
+            <h2 style={{
+              fontSize: 'clamp(1.125rem, 4vw, 1.5rem)', fontWeight: 700, letterSpacing: '-0.02em',
+              color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+              textAlign: 'center', marginBottom: 4,
+            }}>{currentTrack.title}</h2>
+            <p style={{
+              fontSize: '0.875rem', color: 'var(--text-secondary)', fontWeight: 500,
+              textAlign: 'center', marginBottom: 'var(--space-xl)',
+            }}>{currentTrack.artist}</p>
+            
+            {currentTrack.appleMusicEmbedUrl ? (
+              <AppleMusicEmbed track={currentTrack} height={450} />
+            ) : (
+              <div style={{
+                padding: 'var(--space-3xl)', textAlign: 'center',
+                background: 'var(--bg-surface)', borderRadius: 'var(--radius-lg)',
+              }}>
+                <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
+                  Full playback not available for this track
+                </p>
+                <p style={{ fontSize: '0.6875rem', color: 'var(--text-tertiary)', marginTop: 'var(--space-sm)' }}>
+                  Try playing the preview instead
+                </p>
+              </div>
+            )}
+            <p style={{
+              fontSize: '0.5625rem', color: 'var(--text-muted)', textAlign: 'center',
+              marginTop: 'var(--space-md)', fontFamily: 'var(--font)',
+            }}>
+              Powered by Apple Music · Full song playback
+            </p>
+          </div>
+        )}
+
+        {/* ===== LYRICS VIEW ===== */}
+        {view === 'lyrics' && (
+          <div style={{ width: '100%', paddingTop: 'var(--space-lg)', paddingBottom: '50vh' }}>
+            <h2 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 2, textAlign: 'center' }}>
+              {currentTrack.title}
+            </h2>
+            <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginBottom: 'var(--space-xl)', textAlign: 'center' }}>
+              {currentTrack.artist}
+            </p>
+            {lyricsLoading ? (
+              <div style={{ padding: 'var(--space-3xl)', textAlign: 'center' }}>
+                <div className="spinner" style={{ margin: '0 auto' }} />
+                <p style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', marginTop: 'var(--space-md)' }}>Loading lyrics...</p>
+              </div>
+            ) : lyrics.length > 0 ? (
+              <div ref={lyricsRef} style={{ maxHeight: '55vh', overflowY: 'auto', scrollBehavior: 'smooth', textAlign: 'center', padding: 'var(--space-md) 0' }}>
+                {lyrics.map((line, i) => (
+                  <p key={i} data-l={i} style={{
+                    fontSize: i === activeLine ? '1.35rem' : '0.9375rem',
+                    fontWeight: i === activeLine ? 700 : 400,
+                    color: i === activeLine ? '#fff' : 'var(--text-tertiary)',
+                    transition: 'all 0.35s var(--ease-out)',
+                    marginBottom: 'var(--space-md)',
+                    opacity: i === activeLine ? 1 : 0.4,
+                    transform: i === activeLine ? 'scale(1.04)' : 'scale(1)',
+                    lineHeight: 1.7,
+                  }}>{line.words}</p>
+                ))}
+              </div>
+            ) : (
+              <div style={{ padding: 'var(--space-3xl)', textAlign: 'center' }}>
+                <Icon.Lyrics size={32} style={{ color: 'var(--text-muted)', margin: '0 auto var(--space-md)' }} />
+                <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>No lyrics available</p>
+              </div>
+            )}
+          </div>
         )}
       </div>
     </div>

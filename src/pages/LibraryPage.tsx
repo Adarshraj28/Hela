@@ -56,7 +56,7 @@ export function LibraryPage() {
                 fontWeight: 600,
                 fontSize: '0.8125rem',
                 whiteSpace: 'nowrap',
-                transition: 'all var(--transition-fast)',
+                transition: 'all var(--t-fast)',
                 display: 'flex',
                 alignItems: 'center',
                 gap: 'var(--space-xs)',
@@ -91,7 +91,7 @@ export function LibraryPage() {
                   style={{
                     padding: 'var(--space-sm) var(--space-lg)',
                     borderRadius: 'var(--radius-full)',
-                    background: 'var(--accent-primary)',
+                    background: 'var(--accent)',
                     color: 'white',
                     fontWeight: 600,
                     fontSize: '0.875rem',
@@ -172,7 +172,7 @@ export function LibraryPage() {
                   style={{
                     padding: 'var(--space-sm) var(--space-lg)',
                     borderRadius: 'var(--radius-full)',
-                    background: 'var(--accent-primary)',
+                    background: 'var(--accent)',
                     color: 'white',
                     fontWeight: 600,
                     fontSize: '0.875rem',
@@ -210,7 +210,7 @@ export function LibraryPage() {
                   style={{
                     padding: 'var(--space-sm) var(--space-lg)',
                     borderRadius: 'var(--radius-full)',
-                    background: 'var(--accent-primary)',
+                    background: 'var(--accent)',
                     color: 'white',
                     fontWeight: 600,
                     fontSize: '0.875rem',

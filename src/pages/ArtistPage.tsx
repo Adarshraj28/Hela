@@ -60,7 +60,7 @@ export function ArtistPage() {
           borderRadius: 'var(--radius-xl)',
           background: 'var(--bg-surface)',
           marginBottom: 'var(--space-2xl)',
-          animation: 'skeleton-shimmer 1.5s infinite',
+          animation: 'shimmer 1.5s infinite',
           backgroundSize: '200% 100%',
         }} />
         <SongRowSkeleton />
@@ -92,7 +92,7 @@ export function ArtistPage() {
           style={{
             padding: 'var(--space-sm) var(--space-lg)',
             borderRadius: 'var(--radius-full)',
-            background: 'var(--accent-primary)',
+            background: 'var(--accent)',
             color: 'white',
             fontWeight: 600,
           }}
@@ -207,7 +207,7 @@ export function ArtistPage() {
             width: 52,
             height: 52,
             borderRadius: '50%',
-            background: 'var(--accent-primary)',
+            background: 'var(--accent)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -228,11 +228,11 @@ export function ArtistPage() {
           style={{
             padding: '8px 24px',
             borderRadius: 'var(--radius-full)',
-            border: `1px solid ${isLiked ? 'var(--accent-secondary)' : 'var(--border-medium)'}`,
-            color: isLiked ? 'var(--accent-secondary)' : 'var(--text-primary)',
+            border: `1px solid ${isLiked ? 'var(--accent-pink)' : 'var(--border-medium)'}`,
+            color: isLiked ? 'var(--accent-pink)' : 'var(--text-primary)',
             fontWeight: 600,
             fontSize: '0.875rem',
-            transition: 'all var(--transition-fast)',
+            transition: 'all var(--t-fast)',
           }}
         >
           {isLiked ? 'Following' : 'Follow'}

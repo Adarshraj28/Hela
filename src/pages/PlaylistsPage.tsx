@@ -37,7 +37,7 @@ export function PlaylistsPage() {
             style={{
               padding: 'var(--space-sm) var(--space-lg)',
               borderRadius: 'var(--radius-full)',
-              background: 'var(--accent-primary)',
+              background: 'var(--accent)',
               color: 'white',
               fontWeight: 600,
             }}
@@ -103,7 +103,7 @@ export function PlaylistsPage() {
                   fontWeight: 800,
                   color: 'var(--text-primary)',
                   background: 'var(--bg-surface)',
-                  border: '1px solid var(--accent-primary)',
+                  border: '1px solid var(--accent)',
                   borderRadius: 'var(--radius-sm)',
                   padding: '2px 8px',
                   width: '100%',
@@ -152,7 +152,7 @@ export function PlaylistsPage() {
                 width: 48,
                 height: 48,
                 borderRadius: '50%',
-                background: 'var(--accent-primary)',
+                background: 'var(--accent)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -197,7 +197,7 @@ export function PlaylistsPage() {
                 style={{
                   padding: 'var(--space-sm) var(--space-lg)',
                   borderRadius: 'var(--radius-full)',
-                  background: 'var(--accent-primary)',
+                  background: 'var(--accent)',
                   color: 'white',
                   fontWeight: 600,
                 }}
@@ -276,7 +276,7 @@ export function PlaylistsPage() {
             gap: 'var(--space-sm)',
             padding: '8px 16px',
             borderRadius: 'var(--radius-full)',
-            background: 'var(--accent-primary)',
+            background: 'var(--accent)',
             color: 'white',
             fontWeight: 600,
             fontSize: '0.8125rem',
@@ -338,7 +338,7 @@ export function PlaylistsPage() {
             style={{
               padding: 'var(--space-md) var(--space-lg)',
               borderRadius: 'var(--radius-md)',
-              background: newName.trim() ? 'var(--accent-primary)' : 'var(--bg-surface)',
+              background: newName.trim() ? 'var(--accent)' : 'var(--bg-surface)',
               color: 'white',
               fontWeight: 600,
               fontSize: '0.875rem',
@@ -362,7 +362,7 @@ export function PlaylistsPage() {
               style={{
                 padding: 'var(--space-sm) var(--space-lg)',
                 borderRadius: 'var(--radius-full)',
-                background: 'var(--accent-primary)',
+                background: 'var(--accent)',
                 color: 'white',
                 fontWeight: 600,
                 fontSize: '0.875rem',
@@ -388,7 +388,7 @@ export function PlaylistsPage() {
                 padding: 'var(--space-lg)',
                 textAlign: 'left',
                 cursor: 'pointer',
-                transition: 'all var(--transition-fast)',
+                transition: 'all var(--t-fast)',
                 border: '1px solid var(--border-subtle)',
               }}
             >

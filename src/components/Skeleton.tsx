@@ -20,7 +20,7 @@ export function Skeleton({ width, height = '1em', borderRadius = 'var(--radius-s
         borderRadius,
         background: 'linear-gradient(90deg, var(--bg-surface) 25%, var(--bg-surface-hover) 50%, var(--bg-surface) 75%)',
         backgroundSize: '200% 100%',
-        animation: 'skeleton-shimmer 1.5s infinite',
+        animation: 'shimmer 1.5s infinite',
         flexShrink: 0,
         ...style,
       }}

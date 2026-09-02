@@ -208,7 +208,7 @@ function QueueItem({
         background: hovered ? 'var(--bg-glass-hover)' : 'transparent',
         opacity: dimmed ? 0.5 : 1,
         cursor: 'pointer',
-        transition: 'background var(--transition-fast)',
+        transition: 'background var(--t-fast)',
       }}
     >
       <img
@@ -225,7 +225,7 @@ function QueueItem({
         <p style={{
           fontSize: '0.8125rem',
           fontWeight: isCurrent ? 600 : 500,
-          color: isCurrent ? 'var(--accent-primary)' : 'var(--text-primary)',
+          color: isCurrent ? 'var(--accent)' : 'var(--text-primary)',
           overflow: 'hidden',
           textOverflow: 'ellipsis',
           whiteSpace: 'nowrap',
