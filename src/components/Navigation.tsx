@@ -1,5 +1,4 @@
 import { NavLink } from 'react-router-dom';
-import { usePlayerStore } from '../store/playerStore';
 import { Icon } from './HelaIcons';
 
 const NAV = [
@@ -7,6 +6,7 @@ const NAV = [
   { path: '/search', label: 'Search', icon: Icon.Search },
   { path: '/library', label: 'Library', icon: Icon.Library },
   { path: '/playlists', label: 'Playlists', icon: Icon.List },
+  { path: '/settings', label: 'Profile', icon: Icon.Settings },
 ];
 
 export function Sidebar() {
@@ -77,8 +77,8 @@ export function MobileNav() {
     <nav className="mobile-nav" style={{
       position: 'fixed', bottom: 0, left: 0, right: 0,
       height: 'var(--mobile-nav-height)',
-      background: 'rgba(6, 6, 11, 0.92)',
-      backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)',
+      background: 'rgba(6, 6, 11, 0.94)',
+      backdropFilter: 'blur(32px)', WebkitBackdropFilter: 'blur(32px)',
       borderTop: '1px solid rgba(255,255,255,0.04)',
       display: 'none', alignItems: 'center', justifyContent: 'space-around',
       paddingBottom: 'env(safe-area-inset-bottom)',
@@ -87,13 +87,29 @@ export function MobileNav() {
       {NAV.map(({ path, label, icon: IconComp }) => (
         <NavLink key={path} to={path} end={path === '/'}
           style={({ isActive }) => ({
-            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
-            padding: '4px 12px', color: isActive ? '#fff' : 'var(--text-tertiary)',
-            fontSize: '0.5rem', fontWeight: isActive ? 600 : 400,
+            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
+            padding: '6px 0', minWidth: 56,
+            color: isActive ? '#fff' : 'var(--text-tertiary)',
             transition: 'color var(--t-fast)',
           })}>
-          <IconComp size={18} />
-          {label}
+          {({ isActive }) => (
+            <>
+              <div style={{ position: 'relative' }}>
+                <IconComp size={20} />
+                {isActive && (
+                  <div style={{
+                    position: 'absolute', bottom: -4, left: '50%', transform: 'translateX(-50%)',
+                    width: 3, height: 3, borderRadius: '50%',
+                    background: 'var(--accent)',
+                  }} />
+                )}
+              </div>
+              <span style={{
+                fontSize: '0.5625rem', fontWeight: isActive ? 600 : 400,
+                marginTop: isActive ? 2 : 0,
+              }}>{label}</span>
+            </>
+          )}
         </NavLink>
       ))}
     </nav>

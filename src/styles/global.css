@@ -186,3 +186,40 @@ img { display: block; max-width: 100%; }
   position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px;
   overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border-width: 0;
 }
+
+/* ---- Mobile Enhancements ---- */
+@media (max-width: 768px) {
+  html { font-size: 15px; }
+  body { -webkit-overflow-scrolling: touch; }
+  
+  /* Larger touch targets */
+  button { min-height: 44px; }
+  
+  /* Better input handling */
+  input[type="range"] { height: 24px; }
+  
+  /* Safe area for notch devices */
+  .app-main {
+    padding-top: env(safe-area-inset-top) !important;
+  }
+  
+  /* Smooth page transitions */
+  main {
+    animation: fadeIn 0.2s var(--ease-out);
+  }
+}
+
+/* iPhone notch safe areas */
+@supports (padding-top: env(safe-area-inset-top)) {
+  .mobile-nav {
+    padding-bottom: env(safe-area-inset-bottom) !important;
+  }
+}
+
+/* Compact mobile player */
+@media (max-width: 480px) {
+  .mini-player {
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0 !important;
+    margin: 0 var(--space-sm);
+  }
+}

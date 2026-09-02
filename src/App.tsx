@@ -9,6 +9,7 @@ import { LibraryPage } from './pages/LibraryPage';
 import { AlbumPage } from './pages/AlbumPage';
 import { ArtistPage } from './pages/ArtistPage';
 import { PlaylistsPage } from './pages/PlaylistsPage';
+import { SettingsPage } from './pages/SettingsPage';
 
 export default function App() {
   const hasTrack = usePlayerStore((s) => !!s.currentTrack);
@@ -36,6 +37,7 @@ export default function App() {
             <Route path="/playlists/:id" element={<PlaylistsPage />} />
             <Route path="/album/:id" element={<AlbumPage />} />
             <Route path="/artist/:id" element={<ArtistPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
           </Routes>
         </main>
 

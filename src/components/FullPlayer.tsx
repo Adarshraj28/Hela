@@ -16,8 +16,16 @@ export function FullPlayer() {
   const { isFavorite, addFavorite, removeFavorite, addToRecentlyPlayed } = useLibraryStore();
   const dominant = useDominantColor(currentTrack?.artwork);
   const lyricsRef = useRef<HTMLDivElement>(null);
+  const touchStartY = useRef(0);
 
   const [view, setView] = useState<'cover' | 'lyrics' | 'player'>('cover');
+
+  // Swipe down to close (mobile gesture)
+  const handleTouchStart = (e: React.TouchEvent) => { touchStartY.current = e.touches[0].clientY; };
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    const deltaY = e.changedTouches[0].clientY - touchStartY.current;
+    if (deltaY > 100) toggleFullPlayer();
+  };
   const [lyrics, setLyrics] = useState<LyricLine[]>([]);
   const [lyricsLoading, setLyricsLoading] = useState(false);
   const [activeLine, setActiveLine] = useState(-1);
@@ -78,14 +86,18 @@ export function FullPlayer() {
     : 'var(--bg-base)';
 
   return (
-    <div style={{
-      position: 'fixed', inset: 0, zIndex: 'var(--z-overlay)',
-      display: 'flex', flexDirection: 'column', alignItems: 'center',
-      background: ambientBg,
-      transition: 'background 1.2s ease',
-      animation: 'fadeIn 0.3s var(--ease-out)',
-      overflow: 'auto',
-    }}>
+    <div
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+      style={{
+        position: 'fixed', inset: 0, zIndex: 'var(--z-overlay)',
+        display: 'flex', flexDirection: 'column', alignItems: 'center',
+        background: ambientBg,
+        transition: 'background 1.2s ease',
+        animation: 'fadeIn 0.3s var(--ease-out)',
+        overflow: 'auto',
+      }}
+    >
 
       {/* ---- Top bar ---- */}
       <div style={{
@@ -94,6 +106,12 @@ export function FullPlayer() {
         padding: 'var(--space-md) var(--space-lg)',
         position: 'sticky', top: 0, zIndex: 10,
       }}>
+        <div className="mobile-drag-hint" style={{
+          display: 'none',
+          width: 32, height: 4, borderRadius: 2,
+          background: 'rgba(255,255,255,0.2)',
+          position: 'absolute', top: 6, left: '50%', transform: 'translateX(-50%)',
+        }} />
         <button onClick={toggleFullPlayer} aria-label="Close" style={{
           width: 40, height: 40, borderRadius: '50%',
           background: 'rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -322,6 +340,13 @@ export function FullPlayer() {
           </div>
         )}
       </div>
+
+      {/* Mobile-specific styles */}
+      <style>{`
+        @media (max-width: 768px) {
+          .mobile-drag-hint { display: block !important; }
+        }
+      `}</style>
     </div>
   );
 }
