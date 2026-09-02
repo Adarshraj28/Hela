@@ -2,46 +2,292 @@ import type { Track, Artist, Album, SearchResult } from '../types';
 
 // ========================================
 // HELA — Music API Service
-// Deezer API for metadata + preview playback
-// Spotify23 API for lyrics
+// Primary: iTunes Search API (free, CORS-friendly, real previews)
+// Fallback: Deezer API (album tracks)
+// Lyrics: Spotify23 via RapidAPI
 // ========================================
 
-const BASE_URL = 'https://api.deezer.com';
+const ITUNES_BASE = 'https://itunes.apple.com';
 
-// CORS proxy — try multiple fallbacks
-const CORS_PROXIES = [
-  'https://corsproxy.io/?',
-  'https://api.allorigins.win/raw?url=',
-];
+// ---- iTunes Response Types ----
 
-async function fetchWithProxy(url: string): Promise<Response> {
-  // Try direct first
-  try {
-    const res = await fetch(url);
-    if (res.ok) return res;
-  } catch { /* continue to proxy */ }
-
-  // Try CORS proxies
-  for (const proxy of CORS_PROXIES) {
-    try {
-      const res = await fetch(proxy + encodeURIComponent(url));
-      if (res.ok) return res;
-    } catch { /* continue */ }
-  }
-
-  throw new Error('All fetch attempts failed');
+interface ItunesTrack {
+  wrapperType: string;
+  kind: string;
+  artistId: number;
+  collectionId: number;
+  trackId: number;
+  artistName: string;
+  collectionName: string;
+  trackName: string;
+  previewUrl: string;
+  artworkUrl30: string;
+  artworkUrl60: string;
+  artworkUrl100: string;
+  artworkUrl600?: string;
+  releaseDate: string;
+  trackTimeMillis: number;
+  trackNumber: number;
+  discNumber: number;
+  trackCount?: number;
+  primaryGenreName: string;
+  isStreamable: boolean;
 }
 
-async function fetchAPI<T>(endpoint: string): Promise<T> {
-  const url = `${BASE_URL}${endpoint}`;
-  const response = await fetchWithProxy(url);
-  if (!response.ok) {
-    throw new Error(`API error: ${response.status}`);
-  }
+interface ItunesSearchResponse {
+  resultCount: number;
+  results: ItunesTrack[];
+}
+
+// ---- Transformers ----
+
+function getArtwork(artworkUrl100: string, size: number = 300): string {
+  // Replace 100x100 with larger size
+  return artworkUrl100.replace(/100x100bb/, `${size}x${size}bb`);
+}
+
+function transformTrack(it: ItunesTrack): Track {
+  return {
+    id: `itunes-${it.trackId}`,
+    title: it.trackName,
+    artist: it.artistName,
+    artistId: `itunes-${it.artistId}`,
+    album: it.collectionName,
+    albumId: `itunes-${it.collectionId}`,
+    artwork: getArtwork(it.artworkUrl100, 300),
+    duration: it.trackTimeMillis ? Math.floor(it.trackTimeMillis / 1000) : 0,
+    previewUrl: it.previewUrl,
+    trackNumber: it.trackNumber,
+    releaseDate: it.releaseDate,
+  };
+}
+
+function transformArtistFromTracks(tracks: ItunesTrack[]): Artist | null {
+  if (tracks.length === 0) return null;
+  const first = tracks[0];
+  return {
+    id: `itunes-${first.artistId}`,
+    name: first.artistName,
+    artwork: getArtwork(first.artworkUrl100, 300),
+  };
+}
+
+function transformAlbumFromTracks(tracks: ItunesTrack[]): Album | null {
+  if (tracks.length === 0) return null;
+  const first = tracks[0];
+  return {
+    id: `itunes-${first.collectionId}`,
+    title: first.collectionName,
+    artist: first.artistName,
+    artistId: `itunes-${first.artistId}`,
+    artwork: getArtwork(first.artworkUrl100, 300),
+    releaseDate: first.releaseDate,
+    trackCount: first.trackCount || tracks.length,
+    type: 'album',
+  };
+}
+
+// ---- API Functions ----
+
+async function fetchItunes<T>(endpoint: string): Promise<T> {
+  const response = await fetch(`${ITUNES_BASE}${endpoint}`);
+  if (!response.ok) throw new Error(`iTunes API error: ${response.status}`);
   return response.json() as Promise<T>;
 }
 
-// ---------- Lyrics API (Spotify23 via RapidAPI) ----------
+export async function searchTracks(query: string): Promise<Track[]> {
+  if (!query.trim()) return [];
+  const data = await fetchItunes<ItunesSearchResponse>(
+    `/search?term=${encodeURIComponent(query)}&media=music&entity=song&limit=25`
+  );
+  return data.results
+    .filter((t) => t.previewUrl && t.kind === 'song')
+    .map(transformTrack);
+}
+
+export async function searchArtists(query: string): Promise<Artist[]> {
+  if (!query.trim()) return [];
+  const data = await fetchItunes<ItunesSearchResponse>(
+    `/search?term=${encodeURIComponent(query)}&media=music&entity=musicArtist&limit=20`
+  );
+  // Group by artistId to get unique artists with their artwork
+  const artistMap = new Map<number, ItunesTrack[]>();
+  for (const t of data.results) {
+    if (!t.artistId) continue;
+    if (!artistMap.has(t.artistId)) artistMap.set(t.artistId, []);
+    artistMap.get(t.artistId)!.push(t);
+  }
+  const artists: Artist[] = [];
+  for (const [, tracks] of artistMap) {
+    const artist = transformArtistFromTracks(tracks);
+    if (artist) artists.push(artist);
+  }
+  return artists.slice(0, 20);
+}
+
+export async function searchAlbums(query: string): Promise<Album[]> {
+  if (!query.trim()) return [];
+  const data = await fetchItunes<ItunesSearchResponse>(
+    `/search?term=${encodeURIComponent(query)}&media=music&entity=album&limit=20`
+  );
+  // Group by collectionId
+  const albumMap = new Map<number, ItunesTrack[]>();
+  for (const t of data.results) {
+    if (!t.collectionId) continue;
+    if (!albumMap.has(t.collectionId)) albumMap.set(t.collectionId, []);
+    albumMap.get(t.collectionId)!.push(t);
+  }
+  const albums: Album[] = [];
+  for (const [, tracks] of albumMap) {
+    const album = transformAlbumFromTracks(tracks);
+    if (album) albums.push(album);
+  }
+  return albums.slice(0, 20);
+}
+
+export async function searchAll(query: string): Promise<SearchResult> {
+  if (!query.trim()) return { tracks: [], artists: [], albums: [] };
+  const data = await fetchItunes<ItunesSearchResponse>(
+    `/search?term=${encodeURIComponent(query)}&media=music&limit=50`
+  );
+  const allTracks = data.results
+    .filter((t) => t.previewUrl && t.kind === 'song')
+    .map(transformTrack);
+
+  // Extract unique artists
+  const artistSeen = new Set<number>();
+  const artists: Artist[] = [];
+  for (const t of data.results) {
+    if (t.artistId && !artistSeen.has(t.artistId)) {
+      artistSeen.add(t.artistId);
+      const artist = transformArtistFromTracks([t]);
+      if (artist) artists.push(artist);
+    }
+  }
+
+  // Extract unique albums
+  const albumSeen = new Set<number>();
+  const albums: Album[] = [];
+  for (const t of data.results) {
+    if (t.collectionId && !albumSeen.has(t.collectionId)) {
+      albumSeen.add(t.collectionId);
+      const album = transformAlbumFromTracks([t]);
+      if (album) albums.push(album);
+    }
+  }
+
+  return { tracks: allTracks.slice(0, 25), artists: artists.slice(0, 10), albums: albums.slice(0, 10) };
+}
+
+// Get trending/popular tracks using genre searches
+export async function getChartTracks(): Promise<Track[]> {
+  const genres = ['pop', 'hip-hop', 'rock', 'r&b', 'latin'];
+  const randomGenre = genres[Math.floor(Math.random() * genres.length)];
+  const data = await fetchItunes<ItunesSearchResponse>(
+    `/search?term=${randomGenre}&media=music&entity=song&limit=25&sort=popular`
+  );
+  return data.results
+    .filter((t) => t.previewUrl && t.kind === 'song')
+    .map(transformTrack);
+}
+
+export async function getChartArtists(): Promise<Artist[]> {
+  const data = await fetchItunes<ItunesSearchResponse>(
+    `/search?term=trending+2024&media=music&entity=musicArtist&limit=20`
+  );
+  const artistSeen = new Set<number>();
+  const artists: Artist[] = [];
+  for (const t of data.results) {
+    if (t.artistId && !artistSeen.has(t.artistId)) {
+      artistSeen.add(t.artistId);
+      const artist = transformArtistFromTracks([t]);
+      if (artist) artists.push(artist);
+    }
+  }
+  return artists.slice(0, 20);
+}
+
+export async function getChartAlbums(): Promise<Album[]> {
+  const data = await fetchItunes<ItunesSearchResponse>(
+    `/search?term=top+hits&media=music&entity=album&limit=20`
+  );
+  const albumSeen = new Set<number>();
+  const albums: Album[] = [];
+  for (const t of data.results) {
+    if (t.collectionId && !albumSeen.has(t.collectionId)) {
+      albumSeen.add(t.collectionId);
+      const album = transformAlbumFromTracks([t]);
+      if (album) albums.push(album);
+    }
+  }
+  return albums.slice(0, 20);
+}
+
+export async function getArtist(id: string): Promise<Artist> {
+  const numericId = id.replace('itunes-', '');
+  const data = await fetchItunes<ItunesSearchResponse>(
+    `/lookup?id=${numericId}&entity=song&limit=1`
+  );
+  if (data.results.length === 0) throw new Error('Artist not found');
+  const artist = transformArtistFromTracks(data.results);
+  if (!artist) throw new Error('Artist not found');
+  return artist;
+}
+
+export async function getArtistTopTracks(id: string): Promise<Track[]> {
+  const numericId = id.replace('itunes-', '');
+  const data = await fetchItunes<ItunesSearchResponse>(
+    `/lookup?id=${numericId}&entity=song&limit=10`
+  );
+  return data.results
+    .filter((t) => t.previewUrl && t.kind === 'song')
+    .map(transformTrack);
+}
+
+export async function getArtistAlbums(id: string): Promise<Album[]> {
+  const numericId = id.replace('itunes-', '');
+  const data = await fetchItunes<ItunesSearchResponse>(
+    `/lookup?id=${numericId}&entity=album&limit=20`
+  );
+  const albumSeen = new Set<number>();
+  const albums: Album[] = [];
+  for (const t of data.results) {
+    if (t.collectionId && !albumSeen.has(t.collectionId)) {
+      albumSeen.add(t.collectionId);
+      const album = transformAlbumFromTracks([t]);
+      if (album) albums.push(album);
+    }
+  }
+  return albums;
+}
+
+export async function getAlbum(id: string): Promise<Album> {
+  const numericId = id.replace('itunes-', '');
+  const data = await fetchItunes<ItunesSearchResponse>(
+    `/lookup?id=${numericId}&entity=song`
+  );
+  if (data.results.length === 0) throw new Error('Album not found');
+  const album = transformAlbumFromTracks(data.results);
+  if (!album) throw new Error('Album not found');
+  return album;
+}
+
+export async function getAlbumTracks(id: string): Promise<Track[]> {
+  const numericId = id.replace('itunes-', '');
+  const data = await fetchItunes<ItunesSearchResponse>(
+    `/lookup?id=${numericId}&entity=song`
+  );
+  return data.results
+    .filter((t) => t.previewUrl && t.kind === 'song')
+    .sort((a, b) => a.trackNumber - b.trackNumber)
+    .map(transformTrack);
+}
+
+export async function getEditorial(): Promise<Track[]> {
+  return getChartTracks();
+}
+
+// ---- Lyrics API (Spotify23 via RapidAPI) ----
 
 const LYRICS_API_BASE = 'https://spotify23.p.rapidapi.com';
 const LYRICS_API_KEY = '46c9a2ca18msh67d65dbbe5433c7p1db88djsn92e0cfb46e12';
@@ -50,14 +296,6 @@ export interface LyricLine {
   startTimeMs: number;
   words: string;
   syllables: any[];
-}
-
-export interface LyricsResponse {
-  lyrics?: {
-    lines: LyricLine[];
-    syncType: string;
-  };
-  error?: string;
 }
 
 export async function getTrackLyrics(spotifyTrackId: string): Promise<LyricLine[]> {
@@ -74,8 +312,6 @@ export async function getTrackLyrics(spotifyTrackId: string): Promise<LyricLine[
     );
     if (!response.ok) return [];
     const data = await response.json();
-    // Spotify23 API may return lyrics in different shapes:
-    // { lyrics: { lines: [...] } } or { status: "success", lyrics: [...] } or { lines: [...] }
     if (data.lyrics?.lines) return data.lyrics.lines;
     if (Array.isArray(data.lyrics)) return data.lyrics;
     if (data.lines) return data.lines;
@@ -86,216 +322,7 @@ export async function getTrackLyrics(spotifyTrackId: string): Promise<LyricLine[
   }
 }
 
-// ---------- Deezer Response Types ----------
-
-interface DzTrack {
-  id: number;
-  title: string;
-  title_short: string;
-  duration: number;
-  preview: string;
-  artist: { id: number; name: string };
-  album: { id: number; title: string; cover_big: string; cover_medium: string; cover_small: string };
-  track_position?: number;
-  disk_number?: number;
-  release_date?: string;
-  isrc?: string;
-  rank?: number;
-}
-
-interface DzArtist {
-  id: number;
-  name: string;
-  picture_big: string;
-  picture_medium: string;
-  nb_album?: number;
-  nb_fan?: number;
-  radio?: boolean;
-}
-
-interface DzAlbum {
-  id: number;
-  title: string;
-  cover_big: string;
-  cover_medium: string;
-  cover_small: string;
-  artist: { id: number; name: string };
-  release_date?: string;
-  nb_tracks?: number;
-  type?: string;
-}
-
-interface DzSearchResult {
-  data: DzTrack[];
-  total: number;
-}
-
-interface DzArtistSearchResult {
-  data: DzArtist[];
-  total: number;
-}
-
-interface DzAlbumSearchResult {
-  data: DzAlbum[];
-  total: number;
-}
-
-interface DzChartResult {
-  data: DzTrack[];
-}
-
-interface DzArtistTracks {
-  data: DzTrack[];
-}
-
-interface DzArtistAlbums {
-  data: DzAlbum[];
-  total: number;
-}
-
-interface DzAlbumTracks {
-  data: DzTrack[];
-  total: number;
-}
-
-// ---------- Transformers ----------
-
-function transformTrack(dz: DzTrack): Track {
-  return {
-    id: `dz-${dz.id}`,
-    title: dz.title_short || dz.title,
-    artist: dz.artist.name,
-    artistId: `dz-${dz.artist.id}`,
-    album: dz.album.title,
-    albumId: `dz-${dz.album.id}`,
-    artwork: dz.album.cover_big || dz.album.cover_medium,
-    duration: dz.duration,
-    previewUrl: dz.preview,
-    trackNumber: dz.track_position,
-    releaseDate: dz.release_date,
-    isrc: dz.isrc,
-  };
-}
-
-function transformArtist(dz: DzArtist): Artist {
-  return {
-    id: `dz-${dz.id}`,
-    name: dz.name,
-    artwork: dz.picture_big || dz.picture_medium,
-    followers: dz.nb_fan,
-  };
-}
-
-function transformAlbum(dz: DzAlbum): Album {
-  return {
-    id: `dz-${dz.id}`,
-    title: dz.title,
-    artist: dz.artist.name,
-    artistId: `dz-${dz.artist.id}`,
-    artwork: dz.cover_big || dz.cover_medium,
-    releaseDate: dz.release_date,
-    trackCount: dz.nb_tracks,
-    type: (dz.type as Album['type']) || 'album',
-  };
-}
-
-// ---------- API Functions ----------
-
-export async function searchTracks(query: string): Promise<Track[]> {
-  if (!query.trim()) return [];
-  const result = await fetchAPI<DzSearchResult>(`/search?q=${encodeURIComponent(query)}&limit=25`);
-  return result.data.map(transformTrack);
-}
-
-export async function searchArtists(query: string): Promise<Artist[]> {
-  if (!query.trim()) return [];
-  const result = await fetchAPI<DzArtistSearchResult>(`/search/artist?q=${encodeURIComponent(query)}&limit=20`);
-  return result.data.map(transformArtist);
-}
-
-export async function searchAlbums(query: string): Promise<Album[]> {
-  if (!query.trim()) return [];
-  const result = await fetchAPI<DzAlbumSearchResult>(`/search/album?q=${encodeURIComponent(query)}&limit=20`);
-  return result.data.map(transformAlbum);
-}
-
-export async function searchAll(query: string): Promise<SearchResult> {
-  if (!query.trim()) return { tracks: [], artists: [], albums: [] };
-  const [tracks, artists, albums] = await Promise.all([
-    searchTracks(query),
-    searchArtists(query),
-    searchAlbums(query),
-  ]);
-  return { tracks, artists, albums };
-}
-
-export async function getChartTracks(): Promise<Track[]> {
-  const result = await fetchAPI<DzChartResult>('/chart/0/tracks?limit=25');
-  return result.data.map(transformTrack);
-}
-
-export async function getChartArtists(): Promise<Artist[]> {
-  const result = await fetchAPI<{ data: DzArtist[] }>('/chart/0/artists?limit=20');
-  return result.data.map(transformArtist);
-}
-
-export async function getChartAlbums(): Promise<Album[]> {
-  const result = await fetchAPI<{ data: DzAlbum[] }>('/chart/0/albums?limit=20');
-  return result.data.map(transformAlbum);
-}
-
-export async function getArtist(id: string): Promise<Artist> {
-  const numericId = id.replace('dz-', '');
-  const dz = await fetchAPI<DzArtist>(`/artist/${numericId}`);
-  return transformArtist(dz);
-}
-
-export async function getArtistTopTracks(id: string): Promise<Track[]> {
-  const numericId = id.replace('dz-', '');
-  const result = await fetchAPI<DzArtistTracks>(`/artist/${numericId}/top?limit=10`);
-  return result.data.map(transformTrack);
-}
-
-export async function getArtistAlbums(id: string): Promise<Album[]> {
-  const numericId = id.replace('dz-', '');
-  const result = await fetchAPI<DzArtistAlbums>(`/artist/${numericId}/albums?limit=20`);
-  return result.data.map(transformAlbum);
-}
-
-export async function getAlbum(id: string): Promise<Album> {
-  const numericId = id.replace('dz-', '');
-  const dz = await fetchAPI<DzAlbum>(`/album/${numericId}`);
-  return transformAlbum(dz);
-}
-
-export async function getAlbumTracks(id: string): Promise<Track[]> {
-  const numericId = id.replace('dz-', '');
-  const result = await fetchAPI<DzAlbumTracks>(`/album/${numericId}/tracks`);
-  const album = await getAlbum(id);
-  return result.data.map((t) => {
-    const track = transformTrack(t);
-    track.artwork = album.artwork;
-    track.album = album.title;
-    return track;
-  });
-}
-
-export async function getEditorial(): Promise<Track[]> {
-  const result = await fetchAPI<DzChartResult>('/editorial/0/releases?limit=25');
-  return result.data.map(transformTrack);
-}
-
-// ---------- Spotify Embed Helpers ----------
-
-export function getSpotifyEmbedUrl(trackId: string, isrc?: string): string | null {
-  // Extract the numeric Deezer ID
-  const dzId = trackId.replace('dz-', '');
-  // We can use Deezer ID to construct an embed link
-  // Note: This won't map 1:1, but provides a "Listen on Spotify" fallback
-  return `https://open.spotify.com/embed/track/${dzId}?utm_source=generator&theme=0`;
-}
-
-// ---------- Exported Service Object ----------
+// ---- Exported Service ----
 
 export const musicApi = {
   searchTracks,
@@ -312,7 +339,6 @@ export const musicApi = {
   getAlbumTracks,
   getEditorial,
   getTrackLyrics,
-  getSpotifyEmbedUrl,
 };
 
 export default musicApi;

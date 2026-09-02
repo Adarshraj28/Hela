@@ -5,10 +5,16 @@
   "start_url": "/",
   "display": "standalone",
   "orientation": "any",
-  "background_color": "#050508",
+  "background_color": "#06060b",
   "theme_color": "#8b5cf6",
   "categories": ["music", "entertainment"],
   "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "1254x1254",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
     {
       "src": "/favicon.svg",
       "sizes": "any",
