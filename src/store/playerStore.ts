@@ -7,7 +7,7 @@ function getAudio(): HTMLAudioElement {
   if (!audioEl) {
     audioEl = new Audio();
     audioEl.preload = 'auto';
-    audioEl.crossOrigin = 'anonymous';
+    // Do NOT set crossOrigin — it blocks playback of iTunes preview URLs
   }
   return audioEl;
 }
@@ -44,12 +44,16 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     const audio = getAudio();
     const state = get();
 
+    // Toggle play/pause if same track
     if (state.currentTrack?.id === track.id && !track.previewUrl?.startsWith('data:')) {
       if (state.isPlaying) {
         audio.pause();
         set({ isPlaying: false });
       } else {
-        audio.play().catch(() => set({ error: 'Playback failed' }));
+        audio.play().catch((err) => {
+          console.error('Play failed:', err);
+          set({ error: 'Playback failed' });
+        });
         set({ isPlaying: true });
       }
       return;
@@ -91,13 +95,19 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     };
     audio.onwaiting = () => set({ isLoading: true });
     audio.oncanplay = () => set({ isLoading: false });
-    audio.onerror = () => set({ error: 'Failed to load preview', isLoading: false });
+    audio.onerror = (e) => {
+      console.error('Audio error:', e);
+      set({ error: 'Failed to load preview', isLoading: false });
+    };
 
-    audio.play().catch(() => set({ error: 'Playback failed. Try another track.' }));
+    audio.play().catch((err) => {
+      console.error('Autoplay blocked:', err);
+      set({ error: 'Tap play to start listening', isPlaying: false });
+    });
 
     updateMediaSession(track);
 
-    // Update Media Session action handlers
+    // Media Session action handlers
     if ('mediaSession' in navigator) {
       navigator.mediaSession.setActionHandler('play', () => get().resume());
       navigator.mediaSession.setActionHandler('pause', () => get().pause());
@@ -132,7 +142,10 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       set({ isPlaying: false });
     } else {
       if (audio.src) {
-        audio.play().catch(() => set({ error: 'Playback failed' }));
+        audio.play().catch((err) => {
+          console.error('Resume failed:', err);
+          set({ error: 'Playback failed' });
+        });
         set({ isPlaying: true });
       } else if (queue.length > 0) {
         get().next();
@@ -197,7 +210,6 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
     const audio = getAudio();
     audio.volume = volume;
     set({ volume, isMuted: volume === 0 });
-    // Persist volume
     try { localStorage.setItem('hela-volume', String(volume)); } catch {}
   },
 
@@ -258,7 +270,6 @@ try {
 // ---- Keyboard Shortcuts ----
 if (typeof window !== 'undefined') {
   document.addEventListener('keydown', (e) => {
-    // Ignore if typing in input
     const tag = (e.target as HTMLElement)?.tagName;
     if (tag === 'INPUT' || tag === 'TEXTAREA' || (e.target as HTMLElement)?.contentEditable === 'true') return;
 
