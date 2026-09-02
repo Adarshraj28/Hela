@@ -87,13 +87,16 @@ export function MiniPlayer() {
         {/* Favorite */}
         <button onClick={() => { if (isLiked) removeFavorite(currentTrack.id); else addFavorite(currentTrack); }}
           aria-label={isLiked ? 'Unlike' : 'Like'}
+          className="hover-lift"
           style={{ color: isLiked ? 'var(--accent-pink)' : 'var(--text-tertiary)', padding: 6, display: 'flex', flexShrink: 0,
-            animation: isLiked ? 'heartbeat 0.35s var(--ease-spring)' : 'none' }}>
+            animation: isLiked ? 'heartbeat 0.35s var(--ease-spring)' : 'none',
+            transition: 'all 0.2s var(--ease-spring)' }}>
           <Icon.Heart size={18} filled={isLiked} />
         </button>
 
         {/* Play/Pause */}
         <button onClick={togglePlay} aria-label={isPlaying ? 'Pause' : 'Play'}
+          className="hover-lift"
           style={{
             width: 44, height: 44, borderRadius: '50%', background: '#fff',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -110,6 +113,7 @@ export function MiniPlayer() {
 
         {/* Next */}
         <button onClick={next} aria-label="Next"
+          className="hover-lift"
           style={{ color: 'var(--text-secondary)', padding: 4, display: 'flex', flexShrink: 0 }}>
           <Icon.Next size={20} />
         </button>

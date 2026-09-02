@@ -26,16 +26,27 @@ export function LibraryPage() {
 
   return (
     <div style={{ paddingBottom: 'var(--space-2xl)' }}>
-      <div style={{ padding: 'var(--space-xl) 0' }}>
-        <h1 style={{
-          fontSize: 'clamp(1.75rem, 4vw, 2.5rem)',
-          fontWeight: 800,
-          color: 'var(--text-primary)',
-          letterSpacing: '-0.03em',
-          marginBottom: 4,
-        }}>
-          Your Library
-        </h1>
+      <div style={{ padding: 'var(--space-xl) var(--space-lg) var(--space-md)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+          <h1 style={{
+            fontSize: 'clamp(1.75rem, 4vw, 2.5rem)',
+            fontWeight: 800,
+            color: 'var(--text-primary)',
+            letterSpacing: '-0.03em',
+          }}>
+            Your Library
+          </h1>
+          <button className="hover-lift" style={{
+            width: 40, height: 40, borderRadius: '50%',
+            background: 'rgba(255,255,255,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: 'var(--text-secondary)', transition: 'all var(--t-fast)',
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; }}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          </button>
+        </div>
         <p style={{
           fontSize: '0.875rem',
           color: 'var(--text-secondary)',
@@ -61,21 +72,22 @@ export function LibraryPage() {
           </div>
         </div>
 
-        {/* Tabs */}
+        {/* Tabs — matching reference */}
         <div style={{
           display: 'flex',
-          gap: 'var(--space-xs)',
+          gap: 'var(--space-sm)',
           overflowX: 'auto',
           paddingBottom: 'var(--space-sm)',
-        }}>
+        }} className="hide-scrollbar">
           {tabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
+              className="hover-lift"
               style={{
-                padding: '8px 16px',
+                padding: '8px 18px',
                 borderRadius: 'var(--radius-full)',
-                background: activeTab === tab.id ? 'var(--text-primary)' : 'var(--bg-surface)',
+                background: activeTab === tab.id ? 'var(--text-primary)' : 'rgba(255,255,255,0.04)',
                 color: activeTab === tab.id ? 'var(--bg-primary)' : 'var(--text-secondary)',
                 fontWeight: 600,
                 fontSize: '0.8125rem',

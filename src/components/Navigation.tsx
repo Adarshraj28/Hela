@@ -18,13 +18,12 @@ export function Sidebar() {
       display: 'flex', flexDirection: 'column', padding: 'var(--space-lg) var(--space-md)',
       zIndex: 'var(--z-sticky)',
     }}>
-      {/* Logo */}
       <div style={{
         display: 'flex', alignItems: 'center', gap: 'var(--space-sm)',
         padding: 'var(--space-xs) var(--space-sm)', marginBottom: 'var(--space-2xl)',
       }}>
         <div style={{
-          width: 30, height: 30, borderRadius: 'var(--radius-sm)',
+          width: 32, height: 32, borderRadius: 'var(--radius-sm)',
           overflow: 'hidden', flexShrink: 0,
         }}>
           <img src="/logo.png" alt="Hela" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -34,7 +33,6 @@ export function Sidebar() {
         </span>
       </div>
 
-      {/* Nav */}
       <nav style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
         {NAV.map(({ path, label, icon: IconComp }) => (
           <NavLink key={path} to={path} end={path === '/'}
@@ -43,7 +41,7 @@ export function Sidebar() {
               padding: '10px 14px', borderRadius: 'var(--radius-sm)',
               color: isActive ? '#fff' : 'var(--text-secondary)',
               background: isActive ? 'rgba(139, 92, 246, 0.08)' : 'transparent',
-              boxShadow: isActive ? 'inset 0 0 0 1px rgba(139, 92, 246, 0.08)' : 'none',
+              boxShadow: isActive ? 'inset 0 0 0 1px rgba(139, 92, 246, 0.1)' : 'none',
               fontWeight: isActive ? 600 : 400, fontSize: '0.9375rem',
               transition: 'all var(--t-fast)',
             })}>
@@ -55,7 +53,6 @@ export function Sidebar() {
 
       <div style={{ flex: 1 }} />
 
-      {/* Shortcuts */}
       <div style={{
         padding: 'var(--space-sm) var(--space-md)', borderRadius: 'var(--radius-sm)',
         background: 'rgba(255,255,255,0.02)',
@@ -77,7 +74,7 @@ export function MobileNav() {
     <nav className="mobile-nav" style={{
       position: 'fixed', bottom: 0, left: 0, right: 0,
       height: 'var(--mobile-nav-height)',
-      background: 'var(--bg-glass-solid)',
+      background: 'rgba(8, 8, 16, 0.96)',
       backdropFilter: 'blur(32px) saturate(1.4)', WebkitBackdropFilter: 'blur(32px) saturate(1.4)',
       borderTop: '1px solid rgba(255,255,255,0.04)',
       display: 'none', alignItems: 'center', justifyContent: 'space-around',
@@ -87,25 +84,33 @@ export function MobileNav() {
       {NAV.map(({ path, label, icon: IconComp }) => (
         <NavLink key={path} to={path} end={path === '/'}
           style={({ isActive }) => ({
-            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,              padding: '6px 0', minWidth: 64,
+            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
+            padding: '8px 0', minWidth: 60,
             color: isActive ? '#fff' : 'var(--text-tertiary)',
             transition: 'color var(--t-fast)',
           })}>
           {({ isActive }) => (
             <>
-              <div style={{ position: 'relative' }}>
-                <IconComp size={20} />
+              <div style={{
+                position: 'relative',
+                padding: '6px 14px',
+                borderRadius: 'var(--radius-full)',
+                background: isActive ? 'rgba(139, 92, 246, 0.15)' : 'transparent',
+                transition: 'all var(--t-fast)',
+              }}>
+                <IconComp size={22} />
                 {isActive && (
                   <div style={{
-                    position: 'absolute', bottom: -4, left: '50%', transform: 'translateX(-50%)',
-                    width: 3, height: 3, borderRadius: '50%',
+                    position: 'absolute', bottom: -2, left: '50%', transform: 'translateX(-50%)',
+                    width: 5, height: 5, borderRadius: '50%',
                     background: 'var(--accent)',
+                    boxShadow: '0 0 8px rgba(139,92,246,0.6)',
                   }} />
                 )}
               </div>
               <span style={{
                 fontSize: '0.625rem', fontWeight: isActive ? 600 : 400,
-                marginTop: isActive ? 2 : 0,
+                marginTop: 2,
               }}>{label}</span>
             </>
           )}

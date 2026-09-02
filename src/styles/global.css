@@ -166,6 +166,18 @@ img { display: block; max-width: 100%; }
   }
 }
 
+/* ---- Hover Effects ---- */
+.hover-lift {
+  transition: transform 0.2s var(--ease-spring), box-shadow 0.2s var(--ease-out);
+}
+.hover-lift:hover {
+  transform: translateY(-2px);
+}
+.hover-lift:active {
+  transform: translateY(0) scale(0.97);
+  transition-duration: 60ms;
+}
+
 /* ---- Skeleton ---- */
 @keyframes shimmer {
   0% { background-position: 200% 0; }
@@ -228,35 +240,19 @@ img { display: block; max-width: 100%; }
   .app-main { padding-top: env(safe-area-inset-top) !important; }
   main { animation: fadeIn 0.2s var(--ease-out); }
 
+  /* Disable hover-lift on touch */
+  .hover-lift:hover { transform: none !important; }
+  .hover-lift:active { transform: scale(0.97) !important; transition-duration: 60ms; }
+
   /* Full player — immersive on mobile */
   .full-player-overlay {
     border-radius: 0 !important;
+    padding-bottom: env(safe-area-inset-bottom) !important;
   }
 
-  /* Home page mobile */
-  .home-greeting h1 {
-    font-size: 1.75rem !important;
-  }
-  .home-section-title {
-    font-size: 1.0625rem !important;
-  }
-
-  /* Artist circles — slightly smaller on mobile */
-  .artist-circle {
-    width: 80px !important;
-    height: 80px !important;
-  }
-
-  /* Album/Recently played cards — fit mobile */
-  .home-card {
-    width: 150px !important;
-    height: 150px !important;
-  }
-
-  /* Library cards — full width on mobile */
-  .library-card {
-    width: 100% !important;
-    height: 80px !important;
+  /* Mobile nav active dot glow */
+  .mobile-nav a div[style*="box-shadow"] {
+    filter: blur(1px);
   }
 }
 
@@ -273,4 +269,9 @@ img { display: block; max-width: 100%; }
     border-radius: var(--radius-lg) var(--radius-lg) 0 0 !important;
     margin: 0 var(--space-sm);
   }
+}
+
+/* Active link glow for sidebar */
+a[style*="rgba(139, 92, 246"]:hover {
+  background: rgba(139, 92, 246, 0.12) !important;
 }

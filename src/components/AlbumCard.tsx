@@ -28,6 +28,7 @@ export function AlbumCard({ album, size = 'md' }: AlbumCardProps) {
 
   return (
     <div
+      className="hover-lift"
       style={{ width: dims[size], cursor: 'pointer', flexShrink: 0 }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
@@ -42,6 +43,7 @@ export function AlbumCard({ album, size = 'md' }: AlbumCardProps) {
         borderRadius: 'var(--radius-md)', overflow: 'hidden',
         marginBottom: 'var(--space-sm)',
         background: 'var(--bg-surface)',
+        boxShadow: hovered ? '0 8px 32px rgba(0,0,0,0.4)' : '0 4px 16px rgba(0,0,0,0.25)',
       }}>
         <img src={album.artwork} alt="" loading="lazy"
           onLoad={() => setImgOk(true)}

@@ -16,6 +16,7 @@ export function ArtistCard({ artist, size = 'md' }: ArtistCardProps) {
 
   return (
     <div
+      className="hover-lift"
       style={{ width: dims[size], cursor: 'pointer', textAlign: 'center', flexShrink: 0 }}
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}

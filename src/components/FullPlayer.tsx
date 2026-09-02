@@ -72,8 +72,14 @@ export function FullPlayer() {
     seek(((e.clientX - r.left) / r.width) * duration);
   };
 
+  const handleSeekTouch = (e: React.TouchEvent<HTMLDivElement>) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    const touch = e.touches[0];
+    seek(Math.max(0, Math.min(duration, ((touch.clientX - r.left) / r.width) * duration)));
+  };
+
   const ambientBg = dominant
-    ? `radial-gradient(ellipse 80% 60% at 50% 30%, ${dominant}50 0%, transparent 70%), var(--bg-base)`
+    ? `radial-gradient(ellipse 80% 50% at 50% 30%, ${dominant}40 0%, transparent 70%), var(--bg-base)`
     : 'var(--bg-base)';
 
   return (
@@ -83,7 +89,7 @@ export function FullPlayer() {
       onTouchEnd={handleTouchEnd}
       style={{
         position: 'fixed', inset: 0, zIndex: 'var(--z-overlay)',
-        display: 'flex', flexDirection: 'column', alignItems: 'center',
+        display: 'flex', flexDirection: 'column',
         background: ambientBg,
         transition: 'background 1.2s ease',
         animation: 'fadeIn 0.3s var(--ease-out)',
@@ -92,23 +98,29 @@ export function FullPlayer() {
     >
       {/* ---- Top bar ---- */}
       <div style={{
-        width: '100%', maxWidth: 560,
+        width: '100%',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         padding: 'var(--space-md) var(--space-lg)',
+        paddingTop: 'max(var(--space-md), env(safe-area-inset-top))',
         position: 'sticky', top: 0, zIndex: 10,
+        flexShrink: 0,
       }}>
-        <button onClick={toggleFullPlayer} aria-label="Close" style={{
-          width: 44, height: 44, borderRadius: '50%',
-          background: 'rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-          color: 'var(--text-secondary)',
-        }}>
+        <button onClick={toggleFullPlayer} aria-label="Close" className="hover-lift"
+          style={{
+            width: 44, height: 44, borderRadius: '50%',
+            background: 'rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: 'var(--text-secondary)', transition: 'all var(--t-fast)',
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; }}
+        >
           <Icon.ChevronDown size={24} />
         </button>
 
         <div style={{ display: 'flex', gap: 4, background: 'rgba(255,255,255,0.05)', borderRadius: 'var(--radius-full)', padding: 3 }}>
           {(['highlight', 'lyrics', 'embed'] as const).map((v) => (
             <button key={v} onClick={() => setView(v)} style={{
-              padding: '6px 16px', borderRadius: 'var(--radius-full)',
+              padding: '7px 18px', borderRadius: 'var(--radius-full)',
               fontSize: '0.75rem', fontWeight: 600,
               background: view === v ? 'rgba(255,255,255,0.12)' : 'transparent',
               color: view === v ? 'var(--text-primary)' : 'var(--text-tertiary)',
@@ -117,11 +129,15 @@ export function FullPlayer() {
           ))}
         </div>
 
-        <button aria-label="More" style={{
-          width: 44, height: 44, borderRadius: '50%',
-          background: 'rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center',
-          color: 'var(--text-secondary)',
-        }}>
+        <button aria-label="More" className="hover-lift"
+          style={{
+            width: 44, height: 44, borderRadius: '50%',
+            background: 'rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+            color: 'var(--text-secondary)', transition: 'all var(--t-fast)',
+          }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.1)'; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; }}
+        >
           <Icon.More size={20} />
         </button>
       </div>
@@ -129,7 +145,7 @@ export function FullPlayer() {
       {/* ---- Content ---- */}
       <div style={{
         flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',
-        width: '100%', maxWidth: 560,
+        width: '100%',
         padding: '0 var(--space-xl)',
         justifyContent: view === 'lyrics' ? 'flex-start' : 'center',
       }}>
@@ -137,78 +153,86 @@ export function FullPlayer() {
         {/* ===== HIGHLIGHT VIEW ===== */}
         {view === 'highlight' && (
           <>
-            {/* Large artwork — takes up most of mobile screen */}
+            {/* Large artwork */}
             <div style={{
-              width: 'min(80vw, 360px)', aspectRatio: '1/1',
+              width: 'min(78vw, 340px)', aspectRatio: '1/1',
               borderRadius: 'var(--radius-xl)', overflow: 'hidden',
               boxShadow: dominant
-                ? `0 24px 80px ${dominant}50, 0 0 120px ${dominant}15`
-                : '0 24px 80px rgba(0,0,0,0.6)',
+                ? `0 32px 80px ${dominant}45, 0 0 120px ${dominant}12`
+                : '0 32px 80px rgba(0,0,0,0.6)',
               transition: 'box-shadow 1.2s ease',
-              marginBottom: 'var(--space-2xl)',
+              marginBottom: 'var(--space-xl)',
               animation: isPlaying ? 'artworkBreath 6s ease-in-out infinite' : 'none',
             }}>
               <img src={currentTrack.artwork} alt={currentTrack.title}
-                style={{ width: '100%', height: '100%', objectFit: 'cover', transition: 'opacity 0.4s' }} />
+                style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
             </div>
 
             {/* Track info */}
-            <div style={{ textAlign: 'center', width: '100%', marginBottom: 'var(--space-lg)' }}>
+            <div style={{ textAlign: 'center', width: '100%', marginBottom: 'var(--space-lg)', maxWidth: 400 }}>
               <h2 style={{
-                fontSize: 'clamp(1.25rem, 5vw, 1.75rem)', fontWeight: 700, letterSpacing: '-0.02em',
+                fontSize: 'clamp(1.25rem, 5vw, 1.625rem)', fontWeight: 700, letterSpacing: '-0.02em',
                 color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', lineHeight: 1.2,
               }}>{currentTrack.title}</h2>
-              <p style={{ fontSize: '1rem', color: 'var(--text-secondary)', fontWeight: 500, marginTop: 6 }}>
+              <p style={{ fontSize: '0.9375rem', color: 'var(--text-secondary)', fontWeight: 500, marginTop: 4 }}>
                 {currentTrack.artist}
               </p>
             </div>
 
             {/* Seek bar */}
-            <div style={{ width: '100%', maxWidth: 440, marginBottom: 'var(--space-sm)' }}>
-              <div onClick={handleSeek} style={{
-                height: 5, background: 'rgba(255,255,255,0.08)', borderRadius: 5, cursor: 'pointer', position: 'relative',
-              }} role="slider" aria-label="Seek" aria-valuenow={Math.round(progress)} aria-valuemin={0} aria-valuemax={Math.round(duration)}>
-                <div style={{ height: '100%', width: `${pct}%`, background: 'var(--gradient-accent)', borderRadius: 5, position: 'relative', transition: 'width 0.1s linear' }}>
+            <div style={{ width: '100%', maxWidth: 400, marginBottom: 'var(--space-xs)' }}>
+              <div onClick={handleSeek} onTouchMove={handleSeekTouch}
+                style={{
+                  height: 4, background: 'rgba(255,255,255,0.08)', borderRadius: 4,
+                  cursor: 'pointer', position: 'relative', touchAction: 'none',
+                }}
+                role="slider" aria-label="Seek" aria-valuenow={Math.round(progress)} aria-valuemin={0} aria-valuemax={Math.round(duration)}>
+                <div style={{
+                  height: '100%', width: `${pct}%`,
+                  background: 'var(--gradient-accent)', borderRadius: 4,
+                  position: 'relative', transition: 'width 0.1s linear',
+                }}>
                   <div style={{
-                    position: 'absolute', right: -7, top: '50%', transform: 'translateY(-50%)',
-                    width: 14, height: 14, borderRadius: '50%', background: '#fff',
-                    boxShadow: '0 0 10px rgba(139,92,246,0.4)',
+                    position: 'absolute', right: -6, top: '50%', transform: 'translateY(-50%)',
+                    width: 12, height: 12, borderRadius: '50%', background: '#fff',
+                    boxShadow: '0 0 8px rgba(139,92,246,0.5)',
                   }} />
                 </div>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8 }}>
-                <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', fontVariantNumeric: 'tabular-nums' }}>{formatTime(progress)}</span>
-                <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', fontVariantNumeric: 'tabular-nums' }}>{formatTime(duration)}</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
+                <span style={{ fontSize: '0.6875rem', color: 'var(--text-tertiary)', fontVariantNumeric: 'tabular-nums' }}>{formatTime(progress)}</span>
+                <span style={{ fontSize: '0.6875rem', color: 'var(--text-tertiary)', fontVariantNumeric: 'tabular-nums' }}>-{formatTime(Math.max(0, duration - progress))}</span>
               </div>
             </div>
 
             {/* Transport controls */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 'var(--space-2xl)', marginBottom: 'var(--space-xl)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 'var(--space-xl)', marginBottom: 'var(--space-lg)' }}>
               <CtrlBtn onClick={toggleShuffle} active={shuffle} label="Shuffle">
                 <Icon.Shuffle size={22} />
               </CtrlBtn>
               <CtrlBtn onClick={previous} label="Previous">
-                <Icon.Previous size={30} />
+                <Icon.Previous size={28} />
               </CtrlBtn>
 
               <button onClick={togglePlay} aria-label={isPlaying ? 'Pause' : 'Play'}
+                className="hover-lift"
                 style={{
-                  width: 72, height: 72, borderRadius: '50%',
+                  width: 68, height: 68, borderRadius: '50%',
                   background: 'linear-gradient(180deg, #fff 0%, #e0e0e8 100%)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   color: '#000', flexShrink: 0,
-                  boxShadow: '0 4px 24px rgba(255,255,255,0.15), 0 0 60px rgba(139,92,246,0.15)',
+                  boxShadow: '0 4px 24px rgba(255,255,255,0.15), 0 0 40px rgba(139,92,246,0.12)',
                   transition: 'transform 80ms var(--ease-spring)',
                 }}
                 onMouseDown={(e) => { e.currentTarget.style.transform = 'scale(0.88)'; }}
                 onMouseUp={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
                 onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
               >
-                {isPlaying ? <Icon.Pause size={32} /> : <Icon.Play size={32} style={{ marginLeft: 3 }} />}
+                {isPlaying ? <Icon.Pause size={30} /> : <Icon.Play size={30} style={{ marginLeft: 3 }} />}
               </button>
 
               <CtrlBtn onClick={next} label="Next">
-                <Icon.Next size={30} />
+                <Icon.Next size={28} />
               </CtrlBtn>
               <CtrlBtn onClick={cycleRepeat} active={repeat !== 'off'} label="Repeat" badge={repeat === 'one' ? '1' : undefined}>
                 <Icon.Repeat size={22} />
@@ -218,7 +242,7 @@ export function FullPlayer() {
             {/* Secondary actions */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 'var(--space-2xl)', marginBottom: 'var(--space-xl)' }}>
               <button onClick={() => { if (isLiked) removeFavorite(currentTrack.id); else addFavorite(currentTrack); }}
-                aria-label={isLiked ? 'Unlike' : 'Like'}
+                aria-label={isLiked ? 'Unlike' : 'Like'} className="hover-lift"
                 style={{
                   color: isLiked ? 'var(--accent-pink)' : 'var(--text-tertiary)',
                   padding: 'var(--space-sm)', transition: 'all 0.25s var(--ease-spring)',
@@ -226,36 +250,45 @@ export function FullPlayer() {
                 }}>
                 <Icon.Heart size={24} filled={isLiked} />
               </button>
-              <button aria-label="Queue"
-                style={{ color: 'var(--text-tertiary)', padding: 'var(--space-sm)' }}>
-                <Icon.Queue size={22} />
+              <button aria-label="Equalizer" className="hover-lift"
+                style={{ color: 'var(--text-tertiary)', padding: 'var(--space-sm)', transition: 'all var(--t-fast)' }}
+                onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--text-primary)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-tertiary)'; }}>
+                <Icon.Settings size={22} />
               </button>
-              <button aria-label="Share"
-                onClick={() => {
-                  if (navigator.share) navigator.share({ title: currentTrack.title, text: `${currentTrack.title} by ${currentTrack.artist}` });
-                }}
-                style={{ color: 'var(--text-tertiary)', padding: 'var(--space-sm)' }}>
-                <Icon.Share size={22} />
+              <button aria-label="Queue" className="hover-lift"
+                style={{ color: 'var(--text-tertiary)', padding: 'var(--space-sm)', transition: 'all var(--t-fast)' }}
+                onMouseEnter={(e) => { e.currentTarget.style.color = 'var(--text-primary)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.color = 'var(--text-tertiary)'; }}>
+                <Icon.Queue size={22} />
               </button>
             </div>
 
-            {/* Bottom buttons — matches reference */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', maxWidth: 440 }}>
-              <button style={{
+            {/* Bottom buttons */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', maxWidth: 400 }}>
+              <button className="hover-lift" style={{
                 display: 'flex', alignItems: 'center', gap: 'var(--space-sm)',
-                padding: '8px 16px', borderRadius: 'var(--radius-full)',
+                padding: '10px 18px', borderRadius: 'var(--radius-full)',
                 background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)',
                 color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: 500,
-              }}>
+                transition: 'all var(--t-fast)',
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; }}
+              >
                 <Icon.Settings size={16} />
                 Equalizer Settings
               </button>
-              <button style={{
+              <button className="hover-lift" style={{
                 display: 'flex', alignItems: 'center', gap: 'var(--space-sm)',
-                padding: '8px 16px', borderRadius: 'var(--radius-full)',
+                padding: '10px 18px', borderRadius: 'var(--radius-full)',
                 background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)',
                 color: 'var(--text-secondary)', fontSize: '0.75rem', fontWeight: 500,
-              }}>
+                transition: 'all var(--t-fast)',
+              }}
+              onMouseEnter={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.08)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; }}
+              >
                 <Icon.Queue size={16} />
                 Queue List
               </button>
@@ -265,7 +298,7 @@ export function FullPlayer() {
 
         {/* ===== EMBED VIEW ===== */}
         {view === 'embed' && (
-          <div style={{ width: '100%', paddingTop: 'var(--space-lg)' }}>
+          <div style={{ width: '100%', paddingTop: 'var(--space-lg)', maxWidth: 500 }}>
             <h2 style={{
               fontSize: 'clamp(1.125rem, 4vw, 1.5rem)', fontWeight: 700, letterSpacing: '-0.02em',
               color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
@@ -299,7 +332,7 @@ export function FullPlayer() {
 
         {/* ===== LYRICS VIEW ===== */}
         {view === 'lyrics' && (
-          <div style={{ width: '100%', paddingTop: 'var(--space-lg)', paddingBottom: '50vh' }}>
+          <div style={{ width: '100%', paddingTop: 'var(--space-lg)', paddingBottom: '50vh', maxWidth: 500 }}>
             <h2 style={{ fontSize: '1.125rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 4, textAlign: 'center' }}>
               {currentTrack.title}
             </h2>
@@ -312,7 +345,7 @@ export function FullPlayer() {
                 <p style={{ fontSize: '0.875rem', color: 'var(--text-tertiary)', marginTop: 'var(--space-md)' }}>Loading lyrics...</p>
               </div>
             ) : lyrics.length > 0 ? (
-              <div ref={lyricsRef} style={{ maxHeight: '55vh', overflowY: 'auto', scrollBehavior: 'smooth', textAlign: 'center', padding: 'var(--space-md) 0' }}>
+              <div ref={lyricsRef} style={{ maxHeight: '55vh', overflowY: 'auto', scrollBehavior: 'smooth', textAlign: 'center', padding: 'var(--space-md) 0' }} className="hide-scrollbar">
                 {lyrics.map((line, i) => (
                   <p key={i} data-l={i} style={{
                     fontSize: i === activeLine ? '1.5rem' : '1.0625rem',
@@ -335,9 +368,6 @@ export function FullPlayer() {
           </div>
         )}
       </div>
-
-      {/* Mobile-specific styles */}
-      <style>{`\n        @media (max-width: 768px) {\n          .full-player-overlay {\n            border-radius: 0 !important;\n            padding-bottom: env(safe-area-inset-bottom) !important;\n          }\n        }\n      `}</style>
     </div>
   );
 }
@@ -346,14 +376,17 @@ function CtrlBtn({ onClick, active, label, children, badge }: {
   onClick: () => void; active?: boolean; label: string; children: React.ReactNode; badge?: string;
 }) {
   return (
-    <button onClick={onClick} aria-label={label} style={{
+    <button onClick={onClick} aria-label={label} className="hover-lift" style={{
       color: active ? 'var(--accent)' : 'var(--text-secondary)',
-      padding: 6, display: 'flex', alignItems: 'center', justifyContent: 'center',
-      position: 'relative', transition: 'color var(--t-fast)',
-    }}>
+      padding: 8, display: 'flex', alignItems: 'center', justifyContent: 'center',
+      position: 'relative', transition: 'all var(--t-fast)',
+    }}
+    onMouseEnter={(e) => { if (!active) e.currentTarget.style.color = 'var(--text-primary)'; }}
+    onMouseLeave={(e) => { if (!active) e.currentTarget.style.color = 'var(--text-secondary)'; }}
+    >
       {children}
       {badge && <span style={{
-        position: 'absolute', top: 0, right: -2, fontSize: '0.5rem', fontWeight: 700, lineHeight: 1,
+        position: 'absolute', top: 2, right: 0, fontSize: '0.5rem', fontWeight: 700, lineHeight: 1,
         color: active ? 'var(--accent)' : 'var(--text-tertiary)',
       }}>{badge}</span>}
     </button>
