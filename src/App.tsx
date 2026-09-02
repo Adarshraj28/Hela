@@ -59,14 +59,14 @@ export default function App() {
             .app-main {
               margin-left: 0 !important;
               padding: 0 var(--space-md) var(--space-md) !important;
-              padding-bottom: calc(var(--player-height-mobile) + var(--mobile-nav-height) + var(--space-md)) !important;
+              padding-bottom: calc(var(--player-height) + var(--mobile-nav-height) + var(--space-md)) !important;
             }
             .album-col { display: none !important; }
           }
           @media (max-width: 480px) {
             .app-main {
               padding: 0 var(--space-sm) var(--space-sm) !important;
-              padding-bottom: calc(var(--player-height-mobile) + var(--mobile-nav-height) + var(--space-sm)) !important;
+              padding-bottom: calc(var(--player-height) + var(--mobile-nav-height) + var(--space-sm)) !important;
             }
           }
 

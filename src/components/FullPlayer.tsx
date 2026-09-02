@@ -18,14 +18,14 @@ export function FullPlayer() {
   const lyricsRef = useRef<HTMLDivElement>(null);
   const touchStartY = useRef(0);
 
-  const [view, setView] = useState<'cover' | 'lyrics' | 'player'>('cover');
+  const [view, setView] = useState<'highlight' | 'lyrics' | 'embed'>('highlight');
 
-  // Swipe down to close (mobile gesture)
   const handleTouchStart = (e: React.TouchEvent) => { touchStartY.current = e.touches[0].clientY; };
   const handleTouchEnd = (e: React.TouchEvent) => {
     const deltaY = e.changedTouches[0].clientY - touchStartY.current;
     if (deltaY > 100) toggleFullPlayer();
   };
+
   const [lyrics, setLyrics] = useState<LyricLine[]>([]);
   const [lyricsLoading, setLyricsLoading] = useState(false);
   const [activeLine, setActiveLine] = useState(-1);
@@ -33,25 +33,18 @@ export function FullPlayer() {
   const isLiked = currentTrack ? isFavorite(currentTrack.id) : false;
   const pct = duration > 0 ? (progress / duration) * 100 : 0;
 
-  // Record to recently played
   useEffect(() => {
-    if (currentTrack && isPlaying) {
-      addToRecentlyPlayed(currentTrack);
-    }
+    if (currentTrack && isPlaying) addToRecentlyPlayed(currentTrack);
   }, [currentTrack?.id]); // eslint-disable-line
 
-  // Fetch lyrics
   useEffect(() => {
     if (!currentTrack || view !== 'lyrics') return;
     setLyricsLoading(true);
     setLyrics([]);
     getTrackLyrics(currentTrack.id.replace('itunes-', ''))
-      .then(setLyrics)
-      .catch(() => setLyrics([]))
-      .finally(() => setLyricsLoading(false));
+      .then(setLyrics).catch(() => setLyrics([])).finally(() => setLyricsLoading(false));
   }, [currentTrack?.id, view]);
 
-  // Sync lyrics
   useEffect(() => {
     if (lyrics.length === 0) return;
     const ms = progress * 1000;
@@ -66,7 +59,6 @@ export function FullPlayer() {
     }
   }, [progress, lyrics]);
 
-  // Escape to close
   useEffect(() => {
     const h = (e: KeyboardEvent) => { if (e.key === 'Escape' && showFullPlayer) toggleFullPlayer(); };
     window.addEventListener('keydown', h);
@@ -80,9 +72,8 @@ export function FullPlayer() {
     seek(((e.clientX - r.left) / r.width) * duration);
   };
 
-  // Ambient background from dominant color
   const ambientBg = dominant
-    ? `radial-gradient(ellipse 70% 50% at 50% 20%, ${dominant}40 0%, transparent 70%), var(--bg-base)`
+    ? `radial-gradient(ellipse 80% 60% at 50% 30%, ${dominant}50 0%, transparent 70%), var(--bg-base)`
     : 'var(--bg-base)';
 
   return (
@@ -98,7 +89,6 @@ export function FullPlayer() {
         overflow: 'auto',
       }}
     >
-
       {/* ---- Top bar ---- */}
       <div style={{
         width: '100%', maxWidth: 560,
@@ -106,31 +96,34 @@ export function FullPlayer() {
         padding: 'var(--space-md) var(--space-lg)',
         position: 'sticky', top: 0, zIndex: 10,
       }}>
-        <div className="mobile-drag-hint" style={{
-          display: 'none',
-          width: 32, height: 4, borderRadius: 2,
-          background: 'rgba(255,255,255,0.2)',
-          position: 'absolute', top: 6, left: '50%', transform: 'translateX(-50%)',
-        }} />
         <button onClick={toggleFullPlayer} aria-label="Close" style={{
-          width: 40, height: 40, borderRadius: '50%',
+          width: 44, height: 44, borderRadius: '50%',
           background: 'rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center',
           color: 'var(--text-secondary)',
         }}>
-          <Icon.ChevronDown size={22} />
+          <Icon.ChevronDown size={24} />
         </button>
-        <div style={{ display: 'flex', gap: 2, background: 'rgba(255,255,255,0.05)', borderRadius: 'var(--radius-full)', padding: 2 }}>
-          {(['cover', 'player', 'lyrics'] as const).map((v) => (
+
+        {/* Tabs — matches reference: Highlight / Lyrics / Video */}
+        <div style={{ display: 'flex', gap: 4, background: 'rgba(255,255,255,0.05)', borderRadius: 'var(--radius-full)', padding: 3 }}>
+          {(['highlight', 'lyrics', 'embed'] as const).map((v) => (
             <button key={v} onClick={() => setView(v)} style={{
-              padding: '4px 12px', borderRadius: 'var(--radius-full)',
-              fontSize: '0.625rem', fontWeight: 600, letterSpacing: '0.06em', textTransform: 'uppercase',
-              background: view === v ? 'rgba(255,255,255,0.1)' : 'transparent',
+              padding: '6px 16px', borderRadius: 'var(--radius-full)',
+              fontSize: '0.75rem', fontWeight: 600,
+              background: view === v ? 'rgba(255,255,255,0.12)' : 'transparent',
               color: view === v ? 'var(--text-primary)' : 'var(--text-tertiary)',
               transition: 'all var(--t-fast)',
-            }}>{v === 'cover' ? 'Cover' : v === 'player' ? 'Full Play' : 'Lyrics'}</button>
+            }}>{v === 'highlight' ? 'Highlight' : v === 'lyrics' ? 'Lyrics' : 'Video'}</button>
           ))}
         </div>
-        <div style={{ width: 40 }} />
+
+        <button aria-label="More" style={{
+          width: 44, height: 44, borderRadius: '50%',
+          background: 'rgba(255,255,255,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'center',
+          color: 'var(--text-secondary)',
+        }}>
+          <Icon.More size={20} />
+        </button>
       </div>
 
       {/* ---- Content ---- */}
@@ -141,21 +134,16 @@ export function FullPlayer() {
         justifyContent: view === 'lyrics' ? 'flex-start' : 'center',
       }}>
 
-        {/* ===== COVER VIEW ===== */}
-        {view === 'cover' && (
+        {/* ===== HIGHLIGHT (COVER) VIEW ===== */}
+        {view === 'highlight' && (
           <>
-            <p style={{
-              fontSize: '0.5625rem', fontWeight: 700, letterSpacing: '0.2em',
-              textTransform: 'uppercase', color: 'var(--text-tertiary)', marginBottom: 'var(--space-xl)',
-            }}>Now Playing</p>
-
-            {/* Artwork — the visual anchor */}
+            {/* Large artwork — the visual anchor */}
             <div style={{
-              width: 'min(72vw, 320px)', aspectRatio: '1/1',
+              width: 'min(75vw, 340px)', aspectRatio: '1/1',
               borderRadius: 'var(--radius-xl)', overflow: 'hidden',
               boxShadow: dominant
-                ? `0 24px 80px ${dominant}40, 0 0 100px ${dominant}10`
-                : '0 24px 80px rgba(0,0,0,0.55)',
+                ? `0 24px 80px ${dominant}50, 0 0 120px ${dominant}15`
+                : '0 24px 80px rgba(0,0,0,0.6)',
               transition: 'box-shadow 1.2s ease',
               marginBottom: 'var(--space-2xl)',
               animation: isPlaying ? 'artworkBreath 6s ease-in-out infinite' : 'none',
@@ -167,117 +155,103 @@ export function FullPlayer() {
             {/* Track info */}
             <div style={{ textAlign: 'center', width: '100%', marginBottom: 'var(--space-lg)' }}>
               <h2 style={{
-                fontSize: 'clamp(1.125rem, 4vw, 1.5rem)', fontWeight: 700, letterSpacing: '-0.02em',
+                fontSize: 'clamp(1.25rem, 4vw, 1.75rem)', fontWeight: 700, letterSpacing: '-0.02em',
                 color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', lineHeight: 1.2,
               }}>{currentTrack.title}</h2>
-              <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', fontWeight: 500, marginTop: 4, fontFamily: 'var(--font)' }}>
+              <p style={{ fontSize: '1rem', color: 'var(--text-secondary)', fontWeight: 500, marginTop: 6 }}>
                 {currentTrack.artist}
               </p>
             </div>
 
             {/* Seek bar */}
-            <div style={{ width: '100%', maxWidth: 440, marginBottom: 'var(--space-xs)' }}>
+            <div style={{ width: '100%', maxWidth: 440, marginBottom: 'var(--space-sm)' }}>
               <div onClick={handleSeek} style={{
-                height: 4, background: 'rgba(255,255,255,0.06)', borderRadius: 4, cursor: 'pointer', position: 'relative',
+                height: 5, background: 'rgba(255,255,255,0.08)', borderRadius: 5, cursor: 'pointer', position: 'relative',
               }} role="slider" aria-label="Seek" aria-valuenow={Math.round(progress)} aria-valuemin={0} aria-valuemax={Math.round(duration)}>
-                <div style={{ height: '100%', width: `${pct}%`, background: 'var(--gradient-accent)', borderRadius: 4, position: 'relative', transition: 'width 0.1s linear' }}>
+                <div style={{ height: '100%', width: `${pct}%`, background: 'var(--gradient-accent)', borderRadius: 5, position: 'relative', transition: 'width 0.1s linear' }}>
                   <div style={{
-                    position: 'absolute', right: -6, top: '50%', transform: 'translateY(-50%)',
-                    width: 12, height: 12, borderRadius: '50%', background: '#fff',
-                    boxShadow: '0 0 8px rgba(139,92,246,0.35)',
+                    position: 'absolute', right: -7, top: '50%', transform: 'translateY(-50%)',
+                    width: 14, height: 14, borderRadius: '50%', background: '#fff',
+                    boxShadow: '0 0 10px rgba(139,92,246,0.4)',
                   }} />
                 </div>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 6 }}>
-                <span style={{ fontSize: '0.625rem', color: 'var(--text-tertiary)', fontVariantNumeric: 'tabular-nums', fontFamily: 'var(--font)' }}>{formatTime(progress)}</span>
-                <span style={{ fontSize: '0.625rem', color: 'var(--text-tertiary)', fontVariantNumeric: 'tabular-nums', fontFamily: 'var(--font)' }}>{formatTime(duration)}</span>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 8 }}>
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', fontVariantNumeric: 'tabular-nums' }}>{formatTime(progress)}</span>
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', fontVariantNumeric: 'tabular-nums' }}>{formatTime(duration)}</span>
               </div>
             </div>
 
-            {/* Transport controls */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-xl)', marginBottom: 'var(--space-xl)' }}>
+            {/* Transport controls — matches reference layout */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 'var(--space-2xl)', marginBottom: 'var(--space-xl)' }}>
               <CtrlBtn onClick={toggleShuffle} active={shuffle} label="Shuffle">
-                <Icon.Shuffle size={18} />
+                <Icon.Shuffle size={22} />
               </CtrlBtn>
               <CtrlBtn onClick={previous} label="Previous">
-                <Icon.Previous size={26} />
+                <Icon.Previous size={30} />
               </CtrlBtn>
 
-              {/* Large play button */}
+              {/* Large play button — signature element */}
               <button onClick={togglePlay} aria-label={isPlaying ? 'Pause' : 'Play'}
                 style={{
-                  width: 64, height: 64, borderRadius: '50%',
+                  width: 72, height: 72, borderRadius: '50%',
                   background: 'linear-gradient(180deg, #fff 0%, #e0e0e8 100%)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   color: '#000', flexShrink: 0,
-                  boxShadow: '0 4px 24px rgba(255,255,255,0.15), 0 0 60px rgba(139,92,246,0.15), 0 0 80px rgba(139,92,246,0.08)',
-                  transition: 'transform 80ms var(--ease-spring), box-shadow 0.3s',
+                  boxShadow: '0 4px 24px rgba(255,255,255,0.15), 0 0 60px rgba(139,92,246,0.15)',
+                  transition: 'transform 80ms var(--ease-spring)',
                 }}
                 onMouseDown={(e) => { e.currentTarget.style.transform = 'scale(0.88)'; }}
                 onMouseUp={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
                 onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
               >
-                {isPlaying ? <Icon.Pause size={28} /> : <Icon.Play size={28} style={{ marginLeft: 2 }} />}
+                {isPlaying ? <Icon.Pause size={32} /> : <Icon.Play size={32} style={{ marginLeft: 3 }} />}
               </button>
 
               <CtrlBtn onClick={next} label="Next">
-                <Icon.Next size={26} />
+                <Icon.Next size={30} />
               </CtrlBtn>
               <CtrlBtn onClick={cycleRepeat} active={repeat !== 'off'} label="Repeat" badge={repeat === 'one' ? '1' : undefined}>
-                <Icon.Repeat size={18} />
+                <Icon.Repeat size={22} />
               </CtrlBtn>
             </div>
 
-            {/* Secondary actions */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-xl)', marginBottom: 'var(--space-lg)' }}>
+            {/* Secondary actions — matches reference: heart, settings, queue */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 'var(--space-2xl)' }}>
               <button onClick={() => { if (isLiked) removeFavorite(currentTrack.id); else addFavorite(currentTrack); }}
                 aria-label={isLiked ? 'Unlike' : 'Like'}
                 style={{
                   color: isLiked ? 'var(--accent-pink)' : 'var(--text-tertiary)',
-                  padding: 'var(--space-xs)', transition: 'all 0.25s var(--ease-spring)',
+                  padding: 'var(--space-sm)', transition: 'all 0.25s var(--ease-spring)',
                   transform: isLiked ? 'scale(1.1)' : 'scale(1)',
                 }}>
-                <Icon.Heart size={22} filled={isLiked} />
+                <Icon.Heart size={24} filled={isLiked} />
               </button>
-              <button aria-label="Lyrics" onClick={() => setView('lyrics')}
-                style={{ color: 'var(--text-tertiary)', padding: 'var(--space-xs)' }}>
-                <Icon.Lyrics size={20} />
+              <button aria-label="Equalizer Settings"
+                style={{ color: 'var(--text-tertiary)', padding: 'var(--space-sm)' }}>
+                <Icon.Settings size={22} />
               </button>
-              <button aria-label="Full Play" onClick={() => setView('player')}
-                style={{ color: 'var(--text-tertiary)', padding: 'var(--space-xs)' }}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="12" cy="12" r="10" /><polygon points="10 8 16 12 10 16 10 8" fill="currentColor" />
-                </svg>
-              </button>
-              <button aria-label="Share"
-                onClick={() => {
-                  if (navigator.share) navigator.share({ title: currentTrack.title, text: `${currentTrack.title} by ${currentTrack.artist}` });
-                }}
-                style={{ color: 'var(--text-tertiary)', padding: 'var(--space-xs)' }}>
-                <Icon.Share size={20} />
+              <button aria-label="Queue"
+                style={{ color: 'var(--text-tertiary)', padding: 'var(--space-sm)' }}>
+                <Icon.Queue size={22} />
               </button>
             </div>
           </>
         )}
 
-        {/* ===== FULL PLAY (EMBED) VIEW ===== */}
-        {view === 'player' && (
+        {/* ===== EMBED (VIDEO) VIEW ===== */}
+        {view === 'embed' && (
           <div style={{ width: '100%', paddingTop: 'var(--space-lg)' }}>
-            <p style={{
-              fontSize: '0.5625rem', fontWeight: 700, letterSpacing: '0.2em',
-              textTransform: 'uppercase', color: 'var(--text-tertiary)', marginBottom: 'var(--space-md)',
-              textAlign: 'center',
-            }}>Full Player</p>
             <h2 style={{
               fontSize: 'clamp(1.125rem, 4vw, 1.5rem)', fontWeight: 700, letterSpacing: '-0.02em',
               color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
               textAlign: 'center', marginBottom: 4,
             }}>{currentTrack.title}</h2>
             <p style={{
-              fontSize: '0.875rem', color: 'var(--text-secondary)', fontWeight: 500,
+              fontSize: '1rem', color: 'var(--text-secondary)', fontWeight: 500,
               textAlign: 'center', marginBottom: 'var(--space-xl)',
             }}>{currentTrack.artist}</p>
-            
+
             {currentTrack.appleMusicEmbedUrl ? (
               <AppleMusicEmbed track={currentTrack} height={450} />
             ) : (
@@ -285,17 +259,14 @@ export function FullPlayer() {
                 padding: 'var(--space-3xl)', textAlign: 'center',
                 background: 'var(--bg-surface)', borderRadius: 'var(--radius-lg)',
               }}>
-                <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>
+                <p style={{ fontSize: '0.9375rem', color: 'var(--text-secondary)' }}>
                   Full playback not available for this track
-                </p>
-                <p style={{ fontSize: '0.6875rem', color: 'var(--text-tertiary)', marginTop: 'var(--space-sm)' }}>
-                  Try playing the preview instead
                 </p>
               </div>
             )}
             <p style={{
-              fontSize: '0.5625rem', color: 'var(--text-muted)', textAlign: 'center',
-              marginTop: 'var(--space-md)', fontFamily: 'var(--font)',
+              fontSize: '0.625rem', color: 'var(--text-muted)', textAlign: 'center',
+              marginTop: 'var(--space-md)',
             }}>
               Powered by Apple Music · Full song playback
             </p>
@@ -305,26 +276,26 @@ export function FullPlayer() {
         {/* ===== LYRICS VIEW ===== */}
         {view === 'lyrics' && (
           <div style={{ width: '100%', paddingTop: 'var(--space-lg)', paddingBottom: '50vh' }}>
-            <h2 style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 2, textAlign: 'center' }}>
+            <h2 style={{ fontSize: '1.125rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: 4, textAlign: 'center' }}>
               {currentTrack.title}
             </h2>
-            <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', marginBottom: 'var(--space-xl)', textAlign: 'center' }}>
+            <p style={{ fontSize: '0.9375rem', color: 'var(--text-secondary)', marginBottom: 'var(--space-xl)', textAlign: 'center' }}>
               {currentTrack.artist}
             </p>
             {lyricsLoading ? (
               <div style={{ padding: 'var(--space-3xl)', textAlign: 'center' }}>
                 <div className="spinner" style={{ margin: '0 auto' }} />
-                <p style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', marginTop: 'var(--space-md)' }}>Loading lyrics...</p>
+                <p style={{ fontSize: '0.875rem', color: 'var(--text-tertiary)', marginTop: 'var(--space-md)' }}>Loading lyrics...</p>
               </div>
             ) : lyrics.length > 0 ? (
               <div ref={lyricsRef} style={{ maxHeight: '55vh', overflowY: 'auto', scrollBehavior: 'smooth', textAlign: 'center', padding: 'var(--space-md) 0' }}>
                 {lyrics.map((line, i) => (
                   <p key={i} data-l={i} style={{
-                    fontSize: i === activeLine ? '1.35rem' : '0.9375rem',
+                    fontSize: i === activeLine ? '1.5rem' : '1.0625rem',
                     fontWeight: i === activeLine ? 700 : 400,
                     color: i === activeLine ? '#fff' : 'var(--text-tertiary)',
                     transition: 'all 0.35s var(--ease-out)',
-                    marginBottom: 'var(--space-md)',
+                    marginBottom: 'var(--space-lg)',
                     opacity: i === activeLine ? 1 : 0.4,
                     transform: i === activeLine ? 'scale(1.04)' : 'scale(1)',
                     lineHeight: 1.7,
@@ -333,20 +304,13 @@ export function FullPlayer() {
               </div>
             ) : (
               <div style={{ padding: 'var(--space-3xl)', textAlign: 'center' }}>
-                <Icon.Lyrics size={32} style={{ color: 'var(--text-muted)', margin: '0 auto var(--space-md)' }} />
-                <p style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)' }}>No lyrics available</p>
+                <Icon.Lyrics size={36} style={{ color: 'var(--text-muted)', margin: '0 auto var(--space-md)' }} />
+                <p style={{ fontSize: '0.9375rem', color: 'var(--text-secondary)' }}>No lyrics available</p>
               </div>
             )}
           </div>
         )}
       </div>
-
-      {/* Mobile-specific styles */}
-      <style>{`
-        @media (max-width: 768px) {
-          .mobile-drag-hint { display: block !important; }
-        }
-      `}</style>
     </div>
   );
 }
@@ -357,12 +321,12 @@ function CtrlBtn({ onClick, active, label, children, badge }: {
   return (
     <button onClick={onClick} aria-label={label} style={{
       color: active ? 'var(--accent)' : 'var(--text-secondary)',
-      padding: 4, display: 'flex', alignItems: 'center', justifyContent: 'center',
+      padding: 6, display: 'flex', alignItems: 'center', justifyContent: 'center',
       position: 'relative', transition: 'color var(--t-fast)',
     }}>
       {children}
       {badge && <span style={{
-        position: 'absolute', top: -2, right: -4, fontSize: '0.4rem', fontWeight: 700, lineHeight: 1,
+        position: 'absolute', top: 0, right: -2, fontSize: '0.5rem', fontWeight: 700, lineHeight: 1,
         color: active ? 'var(--accent)' : 'var(--text-tertiary)',
       }}>{badge}</span>}
     </button>

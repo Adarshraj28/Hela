@@ -25,7 +25,9 @@ export function MiniPlayer() {
 
   return (
     <div className="mini-player" style={{
-      position: 'fixed', bottom: 0, left: 0, right: 0,
+      position: 'fixed',
+      bottom: 'var(--mobile-nav-height)',
+      left: 0, right: 0,
       height: 'var(--player-height)',
       background: 'var(--bg-glass-solid)',
       backdropFilter: 'blur(48px) saturate(1.6)',
@@ -48,10 +50,10 @@ export function MiniPlayer() {
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           borderBottom: '1px solid rgba(239,68,68,0.08)',
         }}>
-          <span style={{ fontSize: '0.5625rem', color: '#ef4444', fontFamily: 'var(--font)' }}>{error}</span>
+          <span style={{ fontSize: '0.6875rem', color: '#ef4444', fontFamily: 'var(--font)' }}>{error}</span>
           <button onClick={togglePlay} style={{
-            fontSize: '0.5625rem', color: 'var(--accent)', fontWeight: 600, fontFamily: 'var(--font)',
-            padding: '2px 6px',
+            fontSize: '0.6875rem', color: 'var(--accent)', fontWeight: 600, fontFamily: 'var(--font)',
+            padding: '2px 8px',
           }}>Retry</button>
         </div>
       )}
@@ -63,7 +65,6 @@ export function MiniPlayer() {
           display: 'flex', alignItems: 'center', gap: 'var(--space-sm)',
           flex: '1 1 0', minWidth: 0, cursor: 'pointer', padding: 0, textAlign: 'left',
         }} aria-label="Open full player">
-          {/* Artwork */}
           <div style={{
             width: 52, height: 52, borderRadius: 'var(--radius-md)',
             overflow: 'hidden', flexShrink: 0, background: 'var(--bg-surface)',
@@ -88,13 +89,13 @@ export function MiniPlayer() {
           aria-label={isLiked ? 'Unlike' : 'Like'}
           style={{ color: isLiked ? 'var(--accent-pink)' : 'var(--text-tertiary)', padding: 6, display: 'flex', flexShrink: 0,
             animation: isLiked ? 'heartbeat 0.35s var(--ease-spring)' : 'none' }}>
-          <Icon.Heart size={17} filled={isLiked} />
+          <Icon.Heart size={18} filled={isLiked} />
         </button>
 
         {/* Play/Pause */}
         <button onClick={togglePlay} aria-label={isPlaying ? 'Pause' : 'Play'}
           style={{
-            width: 42, height: 42, borderRadius: '50%', background: '#fff',
+            width: 44, height: 44, borderRadius: '50%', background: '#fff',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             color: '#000', flexShrink: 0,
             boxShadow: '0 2px 12px rgba(255,255,255,0.15), 0 0 20px rgba(139,92,246,0.1)',
@@ -104,21 +105,15 @@ export function MiniPlayer() {
           onMouseUp={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
           onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
         >
-          {isPlaying ? <Icon.Pause size={16} /> : <Icon.Play size={16} />}
+          {isPlaying ? <Icon.Pause size={18} /> : <Icon.Play size={18} />}
         </button>
 
         {/* Next */}
         <button onClick={next} aria-label="Next"
           style={{ color: 'var(--text-secondary)', padding: 4, display: 'flex', flexShrink: 0 }}>
-          <Icon.Next size={18} />
+          <Icon.Next size={20} />
         </button>
       </div>
-
-      <style>{`
-        @media (max-width: 768px) {
-          .mini-player { height: var(--player-height-mobile) !important; }
-        }
-      `}</style>
     </div>
   );
 }

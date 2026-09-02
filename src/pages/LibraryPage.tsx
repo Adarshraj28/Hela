@@ -28,14 +28,21 @@ export function LibraryPage() {
     <div style={{ paddingBottom: 'var(--space-2xl)' }}>
       <div style={{ padding: 'var(--space-xl) 0' }}>
         <h1 style={{
-          fontSize: '2rem',
+          fontSize: 'clamp(1.75rem, 4vw, 2.5rem)',
           fontWeight: 800,
           color: 'var(--text-primary)',
           letterSpacing: '-0.03em',
-          marginBottom: 'var(--space-lg)',
+          marginBottom: 4,
         }}>
           Your Library
         </h1>
+        <p style={{
+          fontSize: '0.875rem',
+          color: 'var(--text-secondary)',
+          marginBottom: 'var(--space-lg)',
+        }}>
+          please choose the album you like
+        </p>
 
         {/* Tabs */}
         <div style={{

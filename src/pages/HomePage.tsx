@@ -5,32 +5,17 @@ import { musicApi } from '../services/api';
 import { usePlayerStore } from '../store/playerStore';
 import { useLibraryStore } from '../store/libraryStore';
 import { getGreeting } from '../utils/formatTime';
-import { SectionHeader } from '../components/SectionHeader';
 import { AlbumCard } from '../components/AlbumCard';
 import { ArtistCard } from '../components/ArtistCard';
 import { SongRow } from '../components/SongRow';
 import { HorizontalScroll } from '../components/HorizontalScroll';
 import { GridSkeleton, SongRowSkeleton } from '../components/Skeleton';
 
-const MOODS = [
-  { emoji: '🌙', label: 'Late Night', query: 'lofi chill', color: '#6366f1' },
-  { emoji: '💻', label: 'Coding', query: 'instrumental focus', color: '#06b6d4' },
-  { emoji: '🔥', label: 'Hype', query: 'hip hop', color: '#ef4444' },
-  { emoji: '💔', label: 'Sad', query: 'sad emotional', color: '#8b5cf6' },
-  { emoji: '☀️', label: 'Morning', query: 'happy upbeat', color: '#f59e0b' },
-  { emoji: '🚗', label: 'Drive', query: 'driving rock', color: '#10b981' },
-  { emoji: '🏋️', label: 'Gym', query: 'workout motivation', color: '#f97316' },
-  { emoji: '🌧', label: 'Rainy', query: 'rain ambient', color: '#64748b' },
-  { emoji: '🎵', label: 'Pop', query: 'pop hits', color: '#ec4899' },
-  { emoji: '🎤', label: 'R&B', query: 'r&b soul', color: '#a855f7' },
-];
-
 export function HomePage() {
   const navigate = useNavigate();
   const [trending, setTrending] = useState<Track[]>([]);
   const [artists, setArtists] = useState<Artist[]>([]);
   const [albums, setAlbums] = useState<Album[]>([]);
-  const [moodTracks, setMoodTracks] = useState<Record<string, Track[]>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { recentlyPlayed, favorites } = useLibraryStore();
@@ -48,15 +33,6 @@ export function HomePage() {
         setTrending(t);
         setArtists(a);
         setAlbums(al);
-
-        const moodResults: Record<string, Track[]> = {};
-        for (const mood of MOODS.slice(0, 3)) {
-          try {
-            const tracks = await musicApi.searchTracks(mood.query);
-            moodResults[mood.label] = tracks.slice(0, 10);
-          } catch {}
-        }
-        setMoodTracks(moodResults);
       } catch {
         setError('Could not load music. Check your connection.');
       } finally {
@@ -70,128 +46,165 @@ export function HomePage() {
 
   return (
     <div style={{ paddingBottom: 'var(--space-3xl)' }}>
-      {/* ---- Hero ---- */}
-      <div style={{ padding: 'var(--space-2xl) 0 var(--space-xl)', position: 'relative' }}>
+      {/* ---- Hero Greeting ---- */}
+      <div style={{ padding: 'var(--space-xl) 0 var(--space-2xl)', position: 'relative' }}>
         <div style={{
-          position: 'absolute', top: -80, left: '25%', width: 400, height: 300,
-          background: 'radial-gradient(ellipse, rgba(139,92,246,0.05) 0%, transparent 70%)',
+          position: 'absolute', top: -100, left: '20%', width: 500, height: 400,
+          background: 'radial-gradient(ellipse, rgba(139,92,246,0.06) 0%, transparent 70%)',
           pointerEvents: 'none',
         }} />
         <h1 style={{
           fontSize: 'clamp(2rem, 5vw, 3.2rem)', fontWeight: 700,
           color: 'var(--text-primary)', letterSpacing: '-0.035em', lineHeight: 1.1,
-          fontFamily: 'var(--font)',
         }}>{getGreeting()}</h1>
         <p style={{
-          fontSize: 'clamp(0.875rem, 2vw, 1rem)',
-          color: 'var(--text-secondary)', marginTop: 'var(--space-xs)',
-          fontFamily: 'var(--font)',
+          fontSize: 'clamp(0.9375rem, 2vw, 1.125rem)',
+          color: 'var(--text-secondary)', marginTop: 'var(--space-sm)',
         }}>What do you want to listen to?</p>
       </div>
 
       {/* Error */}
       {error && (
         <div style={{
-          padding: 'var(--space-md)', borderRadius: 'var(--radius-md)',
+          padding: 'var(--space-md) var(--space-lg)', borderRadius: 'var(--radius-md)',
           background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.12)',
           marginBottom: 'var(--space-xl)', textAlign: 'center',
         }}>
-          <p style={{ fontSize: '0.8125rem', color: '#ef4444', fontFamily: 'var(--font)' }}>{error}</p>
+          <p style={{ fontSize: '0.875rem', color: '#ef4444' }}>{error}</p>
           <button onClick={() => window.location.reload()}
-            style={{ marginTop: 'var(--space-xs)', padding: '4px 12px', borderRadius: 'var(--radius-full)', background: 'rgba(239,68,68,0.1)', color: '#ef4444', fontSize: '0.75rem', fontWeight: 600, fontFamily: 'var(--font)' }}>
+            style={{ marginTop: 'var(--space-sm)', padding: '6px 16px', borderRadius: 'var(--radius-full)', background: 'rgba(239,68,68,0.1)', color: '#ef4444', fontSize: '0.8125rem', fontWeight: 600 }}>
             Retry
           </button>
         </div>
       )}
 
-      {/* ---- Recently Played ---- */}
-      {recentlyPlayed.length > 0 && (
-        <section style={{ marginBottom: 'var(--space-xl)' }}>
-          <SectionHeader title="Recently Played" />
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 'var(--space-xs)' }}>
-            {recentlyPlayed.slice(0, 6).map((e) => (
-              <button key={e.track.id} onClick={() => playTrack(e.track)} style={{
-                display: 'flex', alignItems: 'center', gap: 'var(--space-sm)',
-                padding: '5px', borderRadius: 'var(--radius-sm)',
-                background: 'rgba(255,255,255,0.02)', cursor: 'pointer',
-                transition: 'background var(--t-fast)', textAlign: 'left',
-              }}
-              onMouseEnter={(ev) => { ev.currentTarget.style.background = 'rgba(255,255,255,0.05)'; }}
-              onMouseLeave={(ev) => { ev.currentTarget.style.background = 'rgba(255,255,255,0.02)'; }}
-              >
-                <img src={e.track.artwork} alt="" style={{ width: 40, height: 40, borderRadius: 'var(--radius-xs)', objectFit: 'cover', flexShrink: 0 }} />
-                <p style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: 'var(--font)' }}>
-                  {e.track.title}
-                </p>
-              </button>
+      {/* ---- Artist Recommendation ---- */}
+      <section style={{ marginBottom: 'var(--space-2xl)' }}>
+        <h2 style={{
+          fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-primary)',
+          letterSpacing: '-0.02em', marginBottom: 'var(--space-lg)',
+        }}>Artist Recommendation</h2>
+        {loading ? (
+          <div style={{ display: 'flex', gap: 'var(--space-xl)' }}>
+            {[1,2,3,4].map(i => (
+              <div key={i} style={{ textAlign: 'center' }}>
+                <div className="skeleton" style={{ width: 100, height: 100, borderRadius: '50%' }} />
+                <div className="skeleton" style={{ width: 60, height: 12, marginTop: 'var(--space-sm)', borderRadius: 4 }} />
+              </div>
             ))}
           </div>
-        </section>
-      )}
-
-      {/* ---- Favorites ---- */}
-      {favorites.length > 0 && (
-        <section style={{ marginBottom: 'var(--space-xl)' }}>
-          <SectionHeader title="Your Favorites" action={
-            <button onClick={() => navigate('/library')} style={{ fontSize: '0.6875rem', color: 'var(--text-secondary)', fontWeight: 500, fontFamily: 'var(--font)' }}>See all →</button>
-          } />
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 'var(--space-xs)' }}>
-            {favorites.slice(0, 6).map((track) => (
-              <button key={track.id} onClick={() => playTrack(track, favorites, favorites.indexOf(track))} style={{
-                display: 'flex', alignItems: 'center', gap: 'var(--space-sm)',
-                padding: '5px', borderRadius: 'var(--radius-sm)',
-                background: 'rgba(255,255,255,0.02)', cursor: 'pointer',
-                transition: 'background var(--t-fast)', textAlign: 'left',
-              }}
-              onMouseEnter={(ev) => { ev.currentTarget.style.background = 'rgba(255,255,255,0.05)'; }}
-              onMouseLeave={(ev) => { ev.currentTarget.style.background = 'rgba(255,255,255,0.02)'; }}
-              >
-                <img src={track.artwork} alt="" style={{ width: 40, height: 40, borderRadius: 'var(--radius-xs)', objectFit: 'cover', flexShrink: 0 }} />
-                <div style={{ minWidth: 0 }}>
-                  <p style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: 'var(--font)' }}>{track.title}</p>
-                  <p style={{ fontSize: '0.625rem', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: 'var(--font)' }}>{track.artist}</p>
+        ) : (
+          <HorizontalScroll gap={24}>
+            {artists.map((artist) => (
+              <button key={artist.id} onClick={() => navigate(`/artist/${artist.id}`)}
+                style={{ textAlign: 'center', flexShrink: 0, width: 100 }}>
+                <div style={{
+                  width: 100, height: 100, borderRadius: '50%',
+                  overflow: 'hidden', marginBottom: 'var(--space-sm)',
+                  border: '3px solid rgba(255,255,255,0.06)',
+                  transition: 'border-color 0.3s, transform 0.3s',
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--accent)'; e.currentTarget.style.transform = 'scale(1.05)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)'; e.currentTarget.style.transform = 'scale(1)'; }}
+                >
+                  <img src={artist.artwork} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 </div>
+                <p style={{
+                  fontSize: '0.8125rem', fontWeight: 600, color: 'var(--text-primary)',
+                  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                }}>{artist.name}</p>
               </button>
             ))}
-          </div>
-        </section>
-      )}
-
-      {/* ---- Mood ---- */}
-      <section style={{ marginBottom: 'var(--space-xl)' }}>
-        <SectionHeader title="Pick Your Vibe" />
-        <HorizontalScroll gap={10}>
-          {MOODS.map((mood) => {
-            const tracks = moodTracks[mood.label];
-            return (
-              <button key={mood.label} onClick={() => {
-                if (tracks?.length) playTrack(tracks[0], tracks, 0);
-                else navigate(`/search?q=${encodeURIComponent(mood.query)}`);
-              }} style={{
-                width: 120, flexShrink: 0, padding: 'var(--space-md)',
-                borderRadius: 'var(--radius-md)',
-                background: `linear-gradient(135deg, ${mood.color}15, ${mood.color}08)`,
-                border: `1px solid ${mood.color}15`,
-                cursor: 'pointer', textAlign: 'left',
-                transition: 'all var(--t-normal) var(--ease-out)',
-              }}
-              onMouseEnter={(ev) => { ev.currentTarget.style.transform = 'translateY(-2px)'; ev.currentTarget.style.borderColor = `${mood.color}30`; }}
-              onMouseLeave={(ev) => { ev.currentTarget.style.transform = 'translateY(0)'; ev.currentTarget.style.borderColor = `${mood.color}15`; }}
-              >
-                <span style={{ fontSize: '1.25rem', display: 'block', marginBottom: 'var(--space-sm)' }}>{mood.emoji}</span>
-                <p style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-primary)', fontFamily: 'var(--font)' }}>{mood.label}</p>
-                <p style={{ fontSize: '0.5625rem', color: 'var(--text-tertiary)', marginTop: 2, fontFamily: 'var(--font)' }}>
-                  {tracks ? `${tracks.length} tracks` : 'Search'}
-                </p>
-              </button>
-            );
-          })}
-        </HorizontalScroll>
+          </HorizontalScroll>
+        )}
       </section>
 
-      {/* ---- Trending ---- */}
-      <section style={{ marginBottom: 'var(--space-xl)' }}>
-        <SectionHeader title="Trending Now" subtitle="What's hot right now" />
+      {/* ---- Recently Played (large cards) ---- */}
+      {recentlyPlayed.length > 0 && (
+        <section style={{ marginBottom: 'var(--space-2xl)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-lg)' }}>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
+              Recently Played
+            </h2>
+            <button onClick={() => navigate('/library')} style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', fontWeight: 500 }}>
+              See More
+            </button>
+          </div>
+          <HorizontalScroll gap={16}>
+            {recentlyPlayed.slice(0, 8).map((entry) => (
+              <button key={entry.track.id} onClick={() => playTrack(entry.track)}
+                style={{ flexShrink: 0, width: 180, textAlign: 'left' }}>
+                <div style={{
+                  width: 180, height: 180, borderRadius: 'var(--radius-lg)',
+                  overflow: 'hidden', marginBottom: 'var(--space-sm)',
+                  boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
+                  transition: 'transform 0.3s var(--ease-out)',
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.03)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
+                >
+                  <img src={entry.track.artwork} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                </div>
+                <p style={{
+                  fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)',
+                  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                }}>{entry.track.title}</p>
+                <p style={{
+                  fontSize: '0.75rem', color: 'var(--text-secondary)',
+                  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: 2,
+                }}>{entry.track.artist}</p>
+              </button>
+            ))}
+          </HorizontalScroll>
+        </section>
+      )}
+
+      {/* ---- Favorites (quick grid) ---- */}
+      {favorites.length > 0 && (
+        <section style={{ marginBottom: 'var(--space-2xl)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-lg)' }}>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-primary)', letterSpacing: '-0.02em' }}>
+              Your Favorites
+            </h2>
+            <button onClick={() => navigate('/library')} style={{ fontSize: '0.8125rem', color: 'var(--text-secondary)', fontWeight: 500 }}>
+              See More
+            </button>
+          </div>
+          <HorizontalScroll gap={16}>
+            {favorites.slice(0, 8).map((track) => (
+              <button key={track.id} onClick={() => playTrack(track, favorites, favorites.indexOf(track))}
+                style={{ flexShrink: 0, width: 180, textAlign: 'left' }}>
+                <div style={{
+                  width: 180, height: 180, borderRadius: 'var(--radius-lg)',
+                  overflow: 'hidden', marginBottom: 'var(--space-sm)',
+                  boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
+                  transition: 'transform 0.3s var(--ease-out)',
+                }}
+                onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.03)'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
+                >
+                  <img src={track.artwork} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                </div>
+                <p style={{
+                  fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)',
+                  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                }}>{track.title}</p>
+                <p style={{
+                  fontSize: '0.75rem', color: 'var(--text-secondary)',
+                  overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: 2,
+                }}>{track.artist}</p>
+              </button>
+            ))}
+          </HorizontalScroll>
+        </section>
+      )}
+
+      {/* ---- Trending Now (song list) ---- */}
+      <section style={{ marginBottom: 'var(--space-2xl)' }}>
+        <h2 style={{
+          fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-primary)',
+          letterSpacing: '-0.02em', marginBottom: 'var(--space-lg)',
+        }}>Trending Now</h2>
         {loading ? (
           <>{Array.from({ length: 5 }).map((_, i) => <SongRowSkeleton key={i} />)}</>
         ) : (
@@ -201,41 +214,44 @@ export function HomePage() {
         )}
       </section>
 
-      {/* ---- Artists ---- */}
-      <section style={{ marginBottom: 'var(--space-xl)' }}>
-        <SectionHeader title="Popular Artists" />
-        {loading ? <GridSkeleton count={8} variant="artist" /> : (
-          <HorizontalScroll gap={18}>{artists.map((a) => <ArtistCard key={a.id} artist={a} />)}</HorizontalScroll>
+      {/* ---- New Releases (album carousel) ---- */}
+      <section style={{ marginBottom: 'var(--space-2xl)' }}>
+        <h2 style={{
+          fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-primary)',
+          letterSpacing: '-0.02em', marginBottom: 'var(--space-lg)',
+        }}>New Releases</h2>
+        {loading ? (
+          <div style={{ display: 'flex', gap: 'var(--space-lg)' }}>
+            {[1,2,3,4].map(i => <div key={i} className="skeleton" style={{ width: 200, height: 200, borderRadius: 'var(--radius-md)' }} />)}
+          </div>
+        ) : (
+          <HorizontalScroll gap={20}>{albums.map((a) => <AlbumCard key={a.id} album={a} />)}</HorizontalScroll>
         )}
       </section>
 
-      {/* ---- Albums ---- */}
-      <section style={{ marginBottom: 'var(--space-xl)' }}>
-        <SectionHeader title="New Releases" subtitle="Discover new music" />
-        {loading ? <GridSkeleton count={6} /> : (
-          <HorizontalScroll gap={16}>{albums.map((a) => <AlbumCard key={a.id} album={a} />)}</HorizontalScroll>
-        )}
-      </section>
-
-      {/* ---- Made For You ---- */}
+      {/* ---- Made For You (quick picks) ---- */}
       {!loading && trending.length > 10 && (
-        <section style={{ marginBottom: 'var(--space-xl)' }}>
-          <SectionHeader title="Made For You" subtitle="Quick picks" />
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 'var(--space-xs)' }}>
+        <section style={{ marginBottom: 'var(--space-2xl)' }}>
+          <h2 style={{
+            fontSize: '1.25rem', fontWeight: 700, color: 'var(--text-primary)',
+            letterSpacing: '-0.02em', marginBottom: 'var(--space-lg)',
+          }}>Made For You</h2>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 'var(--space-sm)' }}>
             {trending.slice(10, 16).map((t) => (
               <button key={t.id} onClick={() => quickPlay(t)} style={{
-                display: 'flex', alignItems: 'center', gap: 'var(--space-sm)',
-                padding: '5px', borderRadius: 'var(--radius-sm)',
+                display: 'flex', alignItems: 'center', gap: 'var(--space-md)',
+                padding: 'var(--space-sm)', borderRadius: 'var(--radius-md)',
                 background: 'rgba(255,255,255,0.02)', cursor: 'pointer',
                 transition: 'background var(--t-fast)', textAlign: 'left',
+                border: '1px solid transparent',
               }}
-              onMouseEnter={(ev) => { ev.currentTarget.style.background = 'rgba(255,255,255,0.05)'; }}
-              onMouseLeave={(ev) => { ev.currentTarget.style.background = 'rgba(255,255,255,0.02)'; }}
+              onMouseEnter={(ev) => { ev.currentTarget.style.background = 'rgba(255,255,255,0.04)'; ev.currentTarget.style.borderColor = 'var(--border-subtle)'; }}
+              onMouseLeave={(ev) => { ev.currentTarget.style.background = 'rgba(255,255,255,0.02)'; ev.currentTarget.style.borderColor = 'transparent'; }}
               >
-                <img src={t.artwork} alt="" style={{ width: 40, height: 40, borderRadius: 'var(--radius-xs)', objectFit: 'cover', flexShrink: 0 }} />
+                <img src={t.artwork} alt="" style={{ width: 52, height: 52, borderRadius: 'var(--radius-sm)', objectFit: 'cover', flexShrink: 0 }} />
                 <div style={{ minWidth: 0 }}>
-                  <p style={{ fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: 'var(--font)' }}>{t.title}</p>
-                  <p style={{ fontSize: '0.625rem', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontFamily: 'var(--font)' }}>{t.artist}</p>
+                  <p style={{ fontSize: '0.875rem', fontWeight: 600, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.title}</p>
+                  <p style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', marginTop: 2 }}>{t.artist}</p>
                 </div>
               </button>
             ))}
