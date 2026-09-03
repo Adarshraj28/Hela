@@ -62,13 +62,20 @@ export const fontSize = {
   hero: 34,
 } as const;
 
+export const fontFamily = {
+  regular: 'SpaceGrotesk_400Regular',
+  medium: 'SpaceGrotesk_500Medium',
+  semibold: 'SpaceGrotesk_600SemiBold',
+  bold: 'SpaceGrotesk_700Bold',
+} as const;
+
 export const fontWeight = {
   regular: '400' as const,
   medium: '500' as const,
   semibold: '600' as const,
   bold: '700' as const,
-  extrabold: '800' as const,
-};
+  extrabold: '700' as const,
+} as const;
 
 export const layout = {
   navHeight: 64,
