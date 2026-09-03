@@ -17,7 +17,7 @@ export default function MiniPlayer() {
   const pct = duration > 0 ? (progress / duration) * 100 : 0;
 
   return (
-    <View style={[styles.container, { bottom: layout.navHeight + insets.bottom + 6 }]}>
+    <View style={[styles.container, { bottom: layout.navHeight + 6 }]}>
       {/* Progress bar */}
       <View style={styles.progressBar}>
         <View style={[styles.progressFill, { width: `${pct}%` }]} />

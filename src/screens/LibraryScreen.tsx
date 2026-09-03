@@ -6,6 +6,9 @@ import { colors, borderRadius, fontSize, fontWeight, layout } from '../constants
 import { useLibraryStore } from '../store/libraryStore';
 import { usePlaylistStore } from '../store/playlistStore';
 import { usePlayerStore } from '../store/playerStore';
+import SongActionSheet from '../components/SongActionSheet';
+import { TextInput } from 'react-native';
+import { Track } from '../types';
 
 export default function LibraryScreen() {
   const insets = useSafeAreaInsets();
@@ -13,6 +16,19 @@ export default function LibraryScreen() {
   const { favorites, favoriteAlbums, favoriteArtists, recentlyPlayed } = useLibraryStore();
   const { playlists } = usePlaylistStore();
   const { playTrack } = usePlayerStore();
+
+  const [showCreate, setShowCreate] = React.useState(false);
+  const [newName, setNewName] = React.useState('');
+  const { createPlaylist } = usePlaylistStore();
+  const [actionTrack, setActionTrack] = React.useState<Track | null>(null);
+  const [showActionSheet, setShowActionSheet] = React.useState(false);
+
+  const handleCreate = () => {
+    if (!newName.trim()) return;
+    createPlaylist(newName.trim());
+    setNewName('');
+    setShowCreate(false);
+  };
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={{ paddingTop: insets.top + 16, paddingBottom: 120 }}
@@ -23,10 +39,30 @@ export default function LibraryScreen() {
           <Text style={styles.title}>Your Library</Text>
           <Text style={styles.subtitle}>please choose the album you like</Text>
         </View>
-        <TouchableOpacity style={styles.addBtn} activeOpacity={0.7}>
+        <TouchableOpacity style={styles.addBtn} activeOpacity={0.7} onPress={() => setShowCreate(!showCreate)}>
           <Text style={styles.addBtnText}>+</Text>
         </TouchableOpacity>
       </View>
+
+      {showCreate && (
+        <View style={{ paddingHorizontal: layout.screenPadding, marginBottom: 16 }}>
+          <View style={styles.createRow}>
+            <TextInput
+              style={styles.createInput}
+              placeholder="New playlist name..."
+              placeholderTextColor={colors.textTertiary}
+              value={newName}
+              onChangeText={setNewName}
+              autoFocus
+              returnKeyType="done"
+              onSubmitEditing={handleCreate}
+            />
+            <TouchableOpacity style={[styles.createBtn, !newName.trim() && { opacity: 0.5 }]} onPress={handleCreate}>
+              <Text style={styles.createBtnText}>Create</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      )}
 
       {/* Playlists */}
       {playlists.length > 0 && (
@@ -53,7 +89,8 @@ export default function LibraryScreen() {
           <Text style={styles.sectionTitle}>Liked Songs</Text>
           {favorites.slice(0, 5).map((track, i) => (
             <TouchableOpacity key={track.id} style={styles.listRow} activeOpacity={0.7}
-              onPress={() => playTrack(track, favorites, i)}>
+              onPress={() => playTrack(track, favorites, i)}
+              onLongPress={() => { setActionTrack(track); setShowActionSheet(true); }}>
               <Image source={{ uri: track.artwork }} style={styles.listArt} />
               <View style={styles.listInfo}>
                 <Text style={styles.listTitle} numberOfLines={1}>{track.title}</Text>
@@ -109,6 +146,8 @@ export default function LibraryScreen() {
           </TouchableOpacity>
         </View>
       )}
+
+      <SongActionSheet track={actionTrack} visible={showActionSheet} onClose={() => setShowActionSheet(false)} />
     </ScrollView>
   );
 }
@@ -120,6 +159,10 @@ const styles = StyleSheet.create({
   subtitle: { fontSize: fontSize.sm, color: colors.textSecondary, marginTop: 4 },
   addBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.04)', alignItems: 'center', justifyContent: 'center' },
   addBtnText: { fontSize: 20, color: colors.textSecondary },
+  createRow: { flexDirection: 'row', gap: 8, alignItems: 'center' },
+  createInput: { flex: 1, backgroundColor: colors.bgSurface, borderRadius: borderRadius.md, borderWidth: 1, borderColor: colors.borderMedium, paddingHorizontal: 12, paddingVertical: 10, fontSize: fontSize.md, color: colors.textPrimary },
+  createBtn: { backgroundColor: colors.accent, borderRadius: borderRadius.full, paddingHorizontal: 16, paddingVertical: 10 },
+  createBtnText: { fontSize: fontSize.sm, fontWeight: fontWeight.semibold, color: colors.white },
 
   section: { marginBottom: 24, paddingHorizontal: layout.screenPadding },
   sectionTitle: { fontSize: fontSize.lg, fontWeight: fontWeight.bold, color: colors.textPrimary, marginBottom: 12 },

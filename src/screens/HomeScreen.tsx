@@ -8,6 +8,7 @@ import { useLibraryStore } from '../store/libraryStore';
 import { getGreeting } from '../utils/formatTime';
 import * as api from '../services/musicApi';
 import { Track, Artist, Album } from '../types';
+import SongActionSheet from '../components/SongActionSheet';
 
 const CARD_SIZE = 160;
 const ARTIST_SIZE = 76;
@@ -30,6 +31,8 @@ export default function HomeScreen() {
   const [albums, setAlbums] = useState<Album[]>([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [actionTrack, setActionTrack] = useState<Track | null>(null);
+  const [showActionSheet, setShowActionSheet] = useState(false);
 
   const loadData = useCallback(async () => {
     try {
@@ -156,7 +159,8 @@ export default function HomeScreen() {
             </View>
           )) : trending.slice(0, 10).map((track, i) => (
             <TouchableOpacity key={track.id} style={styles.songRow} activeOpacity={0.7}
-              onPress={() => playTrack(trending[i], trending, i)}>
+              onPress={() => playTrack(trending[i], trending, i)}
+              onLongPress={() => { setActionTrack(track); setShowActionSheet(true); }}>
               <Text style={styles.songIndex}>{i + 1}</Text>
               <Image source={{ uri: track.artwork }} style={styles.songArt} />
               <View style={styles.songInfo}>
@@ -184,6 +188,8 @@ export default function HomeScreen() {
           </HorizontalScroll>
         </View>
       )}
+
+      <SongActionSheet track={actionTrack} visible={showActionSheet} onClose={() => setShowActionSheet(false)} />
     </ScrollView>
   );
 }

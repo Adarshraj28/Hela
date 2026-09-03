@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { View, Text, TextInput, ScrollView, TouchableOpacity, Image, StyleSheet, ActivityIndicator, Keyboard } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -6,6 +6,7 @@ import { colors, spacing, borderRadius, fontSize, fontWeight, layout } from '../
 import { usePlayerStore } from '../store/playerStore';
 import { searchAll } from '../services/musicApi';
 import { Track, Artist, Album } from '../types';
+import SongActionSheet from '../components/SongActionSheet';
 
 export default function SearchScreen() {
   const insets = useSafeAreaInsets();
@@ -17,6 +18,8 @@ export default function SearchScreen() {
   const [albums, setAlbums] = useState<Album[]>([]);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
+  const [actionTrack, setActionTrack] = useState<Track | null>(null);
+  const [showActionSheet, setShowActionSheet] = useState(false);
 
   const doSearch = useCallback(async (q: string) => {
     if (!q.trim()) { setTracks([]); setArtists([]); setAlbums([]); setSearched(false); return; }
@@ -30,11 +33,21 @@ export default function SearchScreen() {
     } catch {} finally { setLoading(false); }
   }, []);
 
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const handleChange = (text: string) => {
     setQuery(text);
-    if (text.length >= 2) doSearch(text);
-    else { setTracks([]); setArtists([]); setAlbums([]); setSearched(false); }
+    if (timerRef.current) clearTimeout(timerRef.current);
+    if (text.length >= 2) {
+      timerRef.current = setTimeout(() => doSearch(text), 350);
+    } else {
+      setTracks([]); setArtists([]); setAlbums([]); setSearched(false);
+    }
   };
+
+  useEffect(() => {
+    return () => { if (timerRef.current) clearTimeout(timerRef.current); };
+  }, []);
 
   const noResults = searched && !loading && tracks.length === 0 && artists.length === 0 && albums.length === 0;
 
@@ -71,7 +84,8 @@ export default function SearchScreen() {
           <Text style={styles.sectionTitle}>Songs</Text>
           {tracks.slice(0, 10).map((track, i) => (
             <TouchableOpacity key={track.id} style={styles.songRow} activeOpacity={0.7}
-              onPress={() => playTrack(track, tracks, i)}>
+              onPress={() => playTrack(track, tracks, i)}
+              onLongPress={() => { setActionTrack(track); setShowActionSheet(true); }}>
               <Image source={{ uri: track.artwork }} style={styles.songArt} />
               <View style={styles.songInfo}>
                 <Text style={styles.songTitle} numberOfLines={1}>{track.title}</Text>
@@ -121,6 +135,8 @@ export default function SearchScreen() {
           <Text style={styles.emptyDesc}>Find your favorite songs, artists, and albums</Text>
         </View>
       )}
+
+      <SongActionSheet track={actionTrack} visible={showActionSheet} onClose={() => setShowActionSheet(false)} />
     </ScrollView>
   );
 }
