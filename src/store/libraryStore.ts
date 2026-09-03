@@ -1,84 +1,128 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-import type { LibraryState, Track, Artist, Album, RecentlyPlayedEntry } from '../types';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Track, Artist, Album } from '../types';
 
-export const useLibraryStore = create<LibraryState>()(
-  persist(
-    (set, get) => ({
-      favorites: [],
-      favoriteAlbums: [],
-      favoriteArtists: [],
-      recentlyPlayed: [],
+const STORAGE_KEY = 'hela-library';
 
-      addFavorite: (track: Track) => {
-        const { favorites } = get();
-        if (!favorites.find((t) => t.id === track.id)) {
-          set({ favorites: [track, ...favorites] });
-        }
-      },
+interface LibraryStore {
+  favorites: Track[];
+  favoriteAlbums: Album[];
+  favoriteArtists: Artist[];
+  recentlyPlayed: { track: Track; playedAt: string }[];
+  loaded: boolean;
 
-      removeFavorite: (trackId: string) => {
-        set((state) => ({
-          favorites: state.favorites.filter((t) => t.id !== trackId),
-        }));
-      },
+  loadLibrary: () => Promise<void>;
+  addFavorite: (track: Track) => void;
+  removeFavorite: (trackId: string) => void;
+  isFavorite: (trackId: string) => boolean;
+  addFavoriteAlbum: (album: Album) => void;
+  removeFavoriteAlbum: (albumId: string) => void;
+  isFavoriteAlbum: (albumId: string) => boolean;
+  addFavoriteArtist: (artist: Artist) => void;
+  removeFavoriteArtist: (artistId: string) => void;
+  isFavoriteArtist: (artistId: string) => boolean;
+  addToRecentlyPlayed: (track: Track) => void;
+  clearRecentlyPlayed: () => void;
+}
 
-      isFavorite: (trackId: string) => {
-        return get().favorites.some((t) => t.id === trackId);
-      },
+async function saveLibrary(state: Partial<LibraryStore>) {
+  try {
+    const data = {
+      favorites: state.favorites,
+      favoriteAlbums: state.favoriteAlbums,
+      favoriteArtists: state.favoriteArtists,
+      recentlyPlayed: state.recentlyPlayed,
+    };
+    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  } catch {}
+}
 
-      addFavoriteAlbum: (album: Album) => {
-        const { favoriteAlbums } = get();
-        if (!favoriteAlbums.find((a) => a.id === album.id)) {
-          set({ favoriteAlbums: [album, ...favoriteAlbums] });
-        }
-      },
+export const useLibraryStore = create<LibraryStore>((set, get) => ({
+  favorites: [],
+  favoriteAlbums: [],
+  favoriteArtists: [],
+  recentlyPlayed: [],
+  loaded: false,
 
-      removeFavoriteAlbum: (albumId: string) => {
-        set((state) => ({
-          favoriteAlbums: state.favoriteAlbums.filter((a) => a.id !== albumId),
-        }));
-      },
-
-      isFavoriteAlbum: (albumId: string) => {
-        return get().favoriteAlbums.some((a) => a.id === albumId);
-      },
-
-      addFavoriteArtist: (artist: Artist) => {
-        const { favoriteArtists } = get();
-        if (!favoriteArtists.find((a) => a.id === artist.id)) {
-          set({ favoriteArtists: [artist, ...favoriteArtists] });
-        }
-      },
-
-      removeFavoriteArtist: (artistId: string) => {
-        set((state) => ({
-          favoriteArtists: state.favoriteArtists.filter((a) => a.id !== artistId),
-        }));
-      },
-
-      isFavoriteArtist: (artistId: string) => {
-        return get().favoriteArtists.some((a) => a.id === artistId);
-      },
-
-      addToRecentlyPlayed: (track: Track) => {
-        const { recentlyPlayed } = get();
-        // Remove existing entry of same track
-        const filtered = recentlyPlayed.filter((e) => e.track.id !== track.id);
-        const entry: RecentlyPlayedEntry = {
-          track,
-          playedAt: new Date().toISOString(),
-        };
-        // Add to front, keep max 50
-        set({ recentlyPlayed: [entry, ...filtered].slice(0, 50) });
-      },
-
-      clearRecentlyPlayed: () => {
-        set({ recentlyPlayed: [] });
-      },
-    }),
-    {
-      name: 'hela-library',
+  loadLibrary: async () => {
+    try {
+      const raw = await AsyncStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const data = JSON.parse(raw);
+        set({
+          favorites: data.favorites || [],
+          favoriteAlbums: data.favoriteAlbums || [],
+          favoriteArtists: data.favoriteArtists || [],
+          recentlyPlayed: data.recentlyPlayed || [],
+          loaded: true,
+        });
+      } else {
+        set({ loaded: true });
+      }
+    } catch {
+      set({ loaded: true });
     }
-  )
-);
+  },
+
+  addFavorite: (track) => {
+    const { favorites } = get();
+    if (favorites.find(t => t.id === track.id)) return;
+    const updated = [track, ...favorites];
+    set({ favorites: updated });
+    saveLibrary({ favorites: updated });
+  },
+
+  removeFavorite: (trackId) => {
+    const updated = get().favorites.filter(t => t.id !== trackId);
+    set({ favorites: updated });
+    saveLibrary({ favorites: updated });
+  },
+
+  isFavorite: (trackId) => get().favorites.some(t => t.id === trackId),
+
+  addFavoriteAlbum: (album) => {
+    const { favoriteAlbums } = get();
+    if (favoriteAlbums.find(a => a.id === album.id)) return;
+    const updated = [album, ...favoriteAlbums];
+    set({ favoriteAlbums: updated });
+    saveLibrary({ favoriteAlbums: updated });
+  },
+
+  removeFavoriteAlbum: (albumId) => {
+    const updated = get().favoriteAlbums.filter(a => a.id !== albumId);
+    set({ favoriteAlbums: updated });
+    saveLibrary({ favoriteAlbums: updated });
+  },
+
+  isFavoriteAlbum: (albumId) => get().favoriteAlbums.some(a => a.id === albumId),
+
+  addFavoriteArtist: (artist) => {
+    const { favoriteArtists } = get();
+    if (favoriteArtists.find(a => a.id === artist.id)) return;
+    const updated = [artist, ...favoriteArtists];
+    set({ favoriteArtists: updated });
+    saveLibrary({ favoriteArtists: updated });
+  },
+
+  removeFavoriteArtist: (artistId) => {
+    const updated = get().favoriteArtists.filter(a => a.id !== artistId);
+    set({ favoriteArtists: updated });
+    saveLibrary({ favoriteArtists: updated });
+  },
+
+  isFavoriteArtist: (artistId) => get().favoriteArtists.some(a => a.id === artistId),
+
+  addToRecentlyPlayed: (track) => {
+    const { recentlyPlayed } = get();
+    const filtered = recentlyPlayed.filter(e => e.track.id !== track.id);
+    const entry = { track, playedAt: new Date().toISOString() };
+    const updated = [entry, ...filtered].slice(0, 50);
+    set({ recentlyPlayed: updated });
+    saveLibrary({ recentlyPlayed: updated });
+  },
+
+  clearRecentlyPlayed: () => {
+    set({ recentlyPlayed: [] });
+    saveLibrary({ recentlyPlayed: [] });
+  },
+}));

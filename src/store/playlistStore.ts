@@ -1,91 +1,90 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-import type { PlaylistState, Playlist, Track } from '../types';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { Playlist, Track } from '../types';
 
-function generateId(): string {
+const STORAGE_KEY = 'hela-playlists';
+
+interface PlaylistStore {
+  playlists: Playlist[];
+  loaded: boolean;
+
+  loadPlaylists: () => Promise<void>;
+  createPlaylist: (name: string, description?: string) => Playlist;
+  deletePlaylist: (id: string) => void;
+  renamePlaylist: (id: string, name: string) => void;
+  addTrackToPlaylist: (playlistId: string, track: Track) => void;
+  removeTrackFromPlaylist: (playlistId: string, trackId: string) => void;
+  getPlaylist: (id: string) => Playlist | undefined;
+}
+
+function genId(): string {
   return `pl-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 }
 
-export const usePlaylistStore = create<PlaylistState>()(
-  persist(
-    (set, get) => ({
-      playlists: [],
+async function save(playlists: Playlist[]) {
+  try {
+    await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify({ playlists }));
+  } catch {}
+}
 
-      createPlaylist: (name: string, description?: string): Playlist => {
-        const playlist: Playlist = {
-          id: generateId(),
-          name,
-          description,
-          tracks: [],
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        };
-        set((state) => ({ playlists: [...state.playlists, playlist] }));
-        return playlist;
-      },
+export const usePlaylistStore = create<PlaylistStore>((set, get) => ({
+  playlists: [],
+  loaded: false,
 
-      deletePlaylist: (playlistId: string) => {
-        set((state) => ({
-          playlists: state.playlists.filter((p) => p.id !== playlistId),
-        }));
-      },
+  loadPlaylists: async () => {
+    try {
+      const raw = await AsyncStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const data = JSON.parse(raw);
+        set({ playlists: data.playlists || [], loaded: true });
+      } else {
+        set({ loaded: true });
+      }
+    } catch { set({ loaded: true }); }
+  },
 
-      renamePlaylist: (playlistId: string, name: string) => {
-        set((state) => ({
-          playlists: state.playlists.map((p) =>
-            p.id === playlistId
-              ? { ...p, name, updatedAt: new Date().toISOString() }
-              : p
-          ),
-        }));
-      },
+  createPlaylist: (name, description) => {
+    const playlist: Playlist = {
+      id: genId(), name, description,
+      tracks: [], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
+    };
+    const updated = [...get().playlists, playlist];
+    set({ playlists: updated });
+    save(updated);
+    return playlist;
+  },
 
-      addTrackToPlaylist: (playlistId: string, track: Track) => {
-        set((state) => ({
-          playlists: state.playlists.map((p) => {
-            if (p.id !== playlistId) return p;
-            if (p.tracks.find((t) => t.id === track.id)) return p;
-            return {
-              ...p,
-              tracks: [...p.tracks, track],
-              updatedAt: new Date().toISOString(),
-            };
-          }),
-        }));
-      },
+  deletePlaylist: (id) => {
+    const updated = get().playlists.filter(p => p.id !== id);
+    set({ playlists: updated });
+    save(updated);
+  },
 
-      removeTrackFromPlaylist: (playlistId: string, trackId: string) => {
-        set((state) => ({
-          playlists: state.playlists.map((p) =>
-            p.id === playlistId
-              ? {
-                  ...p,
-                  tracks: p.tracks.filter((t) => t.id !== trackId),
-                  updatedAt: new Date().toISOString(),
-                }
-              : p
-          ),
-        }));
-      },
+  renamePlaylist: (id, name) => {
+    const updated = get().playlists.map(p =>
+      p.id === id ? { ...p, name, updatedAt: new Date().toISOString() } : p
+    );
+    set({ playlists: updated });
+    save(updated);
+  },
 
-      reorderPlaylistTracks: (playlistId: string, fromIndex: number, toIndex: number) => {
-        set((state) => ({
-          playlists: state.playlists.map((p) => {
-            if (p.id !== playlistId) return p;
-            const tracks = [...p.tracks];
-            const [moved] = tracks.splice(fromIndex, 1);
-            tracks.splice(toIndex, 0, moved);
-            return { ...p, tracks, updatedAt: new Date().toISOString() };
-          }),
-        }));
-      },
+  addTrackToPlaylist: (playlistId, track) => {
+    const updated = get().playlists.map(p => {
+      if (p.id !== playlistId) return p;
+      if (p.tracks.find(t => t.id === track.id)) return p;
+      return { ...p, tracks: [...p.tracks, track], updatedAt: new Date().toISOString() };
+    });
+    set({ playlists: updated });
+    save(updated);
+  },
 
-      getPlaylist: (playlistId: string) => {
-        return get().playlists.find((p) => p.id === playlistId);
-      },
-    }),
-    {
-      name: 'hela-playlists',
-    }
-  )
-);
+  removeTrackFromPlaylist: (playlistId, trackId) => {
+    const updated = get().playlists.map(p =>
+      p.id === playlistId ? { ...p, tracks: p.tracks.filter(t => t.id !== trackId), updatedAt: new Date().toISOString() } : p
+    );
+    set({ playlists: updated });
+    save(updated);
+  },
+
+  getPlaylist: (id) => get().playlists.find(p => p.id === id),
+}));

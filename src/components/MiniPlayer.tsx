@@ -1,136 +1,159 @@
-import { useRef, useCallback } from 'react';
+import React from 'react';
+import { View, Text, TouchableOpacity, Image, StyleSheet, Pressable } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { colors, borderRadius, fontSize, fontWeight } from '../constants/theme';
 import { usePlayerStore } from '../store/playerStore';
 import { useLibraryStore } from '../store/libraryStore';
-import { formatTime } from '../utils/formatTime';
-import { Icon } from './HelaIcons';
+import { layout } from '../constants/theme';
 
-export function MiniPlayer() {
-  const {
-    currentTrack, isPlaying, progress, duration, error, isLoading,
-    togglePlay, next, toggleFullPlayer,
-  } = usePlayerStore();
+export default function MiniPlayer() {
+  const insets = useSafeAreaInsets();
+  const { currentTrack, isPlaying, progress, duration, isLoading, togglePlay, next, toggleFullPlayer } = usePlayerStore();
   const { isFavorite, addFavorite, removeFavorite } = useLibraryStore();
-  const seekRef = useRef<HTMLDivElement>(null);
 
   if (!currentTrack) return null;
 
   const isLiked = isFavorite(currentTrack.id);
   const pct = duration > 0 ? (progress / duration) * 100 : 0;
 
-  const handleSeek = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const pct = (e.clientX - rect.left) / rect.width;
-    usePlayerStore.getState().seek(pct * duration);
-  }, [duration]);
-
   return (
-    <div className="mini-player" style={{
-      position: 'fixed',
-      bottom: 'var(--mobile-nav-height)',
-      left: 0, right: 0,
-      height: 'var(--player-height)',
-      background: 'var(--bg-glass-solid)',
-      backdropFilter: 'blur(48px) saturate(1.6)',
-      WebkitBackdropFilter: 'blur(48px) saturate(1.6)',
-      borderTop: '1px solid rgba(255,255,255,0.06)',
-      display: 'flex', flexDirection: 'column',
-      zIndex: 'var(--z-player)',
-      boxShadow: '0 -4px 24px rgba(0,0,0,0.3)',
-    }}>
-      {/* Thin progress bar */}
-      <div ref={seekRef} onClick={handleSeek}
-        style={{ width: '100%', height: 3, background: 'rgba(255,255,255,0.06)', cursor: 'pointer', flexShrink: 0 }}
-        role="slider" aria-label="Seek" aria-valuenow={Math.round(progress)} aria-valuemin={0} aria-valuemax={Math.round(duration)}>
-        <div style={{ height: '100%', width: `${pct}%`, background: 'var(--gradient-accent)', transition: 'width 0.15s linear' }} />
-      </div>
+    <View style={[styles.container, { bottom: layout.navHeight + insets.bottom + 6 }]}>
+      {/* Progress bar */}
+      <View style={styles.progressBar}>
+        <View style={[styles.progressFill, { width: `${pct}%` }]} />
+      </View>
 
-      {/* Error banner */}
-      {error && (
-        <div style={{
-          padding: '4px var(--space-md)', background: 'rgba(239,68,68,0.1)',
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-          borderBottom: '1px solid rgba(239,68,68,0.1)',
-        }}>
-          <span style={{ fontSize: '0.6875rem', color: '#ef4444' }}>{error}</span>
-          <button onClick={togglePlay} style={{
-            fontSize: '0.6875rem', color: 'var(--accent)', fontWeight: 600,
-            padding: '2px 10px', borderRadius: 'var(--radius-full)',
-            background: 'rgba(139,92,246,0.1)',
-          }}>Retry</button>
-        </div>
-      )}
+      <Pressable style={styles.content} onPress={toggleFullPlayer}>
+        {/* Artwork */}
+        <View style={[styles.artwork, isPlaying && styles.artworkActive]}>
+          <Image source={{ uri: currentTrack.artwork }} style={styles.artworkImage} />
+        </View>
 
-      {/* Content row */}
-      <div style={{ flex: 1, display: 'flex', alignItems: 'center', padding: '0 var(--space-md)', gap: 'var(--space-sm)', minHeight: 0 }}>
-        {/* Track info — tap to expand */}
-        <button onClick={toggleFullPlayer} style={{
-          display: 'flex', alignItems: 'center', gap: 'var(--space-sm)',
-          flex: '1 1 0', minWidth: 0, cursor: 'pointer', padding: 0, textAlign: 'left',
-        }} aria-label="Open full player">
-          <div style={{
-            width: 52, height: 52, borderRadius: 'var(--radius-md)',
-            overflow: 'hidden', flexShrink: 0, background: 'var(--bg-surface)',
-            boxShadow: '0 2px 12px rgba(0,0,0,0.5)',
-            border: isPlaying ? '2px solid var(--accent)' : '2px solid transparent',
-            transition: 'border-color 0.3s',
-          }}>
-            <img src={currentTrack.artwork} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-          </div>
-          <div style={{ minWidth: 0, flex: 1 }}>
-            <p style={{
-              fontSize: '0.9375rem', fontWeight: 600,
-              color: isPlaying ? 'var(--accent)' : 'var(--text-primary)',
-              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', lineHeight: 1.2,
-              transition: 'color 0.3s',
-            }}>{currentTrack.title}</p>
-            <p style={{
-              fontSize: '0.8125rem', color: 'var(--text-secondary)',
-              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', lineHeight: 1.2, marginTop: 2,
-            }}>{currentTrack.artist}</p>
-          </div>
-        </button>
+        {/* Track info */}
+        <View style={styles.trackInfo}>
+          <Text style={styles.title} numberOfLines={1}>{currentTrack.title}</Text>
+          <Text style={styles.artist} numberOfLines={1}>{currentTrack.artist}</Text>
+        </View>
 
-        {/* Loading spinner */}
-        {isLoading && (
-          <div className="spinner" style={{ flexShrink: 0, width: 20, height: 20 }} />
-        )}
+        {/* Loading */}
+        {isLoading && <View style={styles.loadingDot} />}
 
         {/* Favorite */}
-        <button onClick={() => { if (isLiked) removeFavorite(currentTrack.id); else addFavorite(currentTrack); }}
-          aria-label={isLiked ? 'Unlike' : 'Like'}
-          className="hover-lift"
-          style={{ color: isLiked ? 'var(--accent-pink)' : 'var(--text-tertiary)', padding: 6, display: 'flex', flexShrink: 0,
-            animation: isLiked ? 'heartbeat 0.35s var(--ease-spring)' : 'none',
-            transition: 'all 0.2s var(--ease-spring)' }}>
-          <Icon.Heart size={18} filled={isLiked} />
-        </button>
+        <TouchableOpacity style={styles.iconBtn}
+          onPress={(e) => { e.stopPropagation(); isLiked ? removeFavorite(currentTrack.id) : addFavorite(currentTrack); }}>
+          <Text style={[styles.heartIcon, isLiked && { color: colors.accentPink }]}>♥</Text>
+        </TouchableOpacity>
 
-        {/* Play/Pause — large and prominent */}
-        <button onClick={togglePlay} aria-label={isPlaying ? 'Pause' : 'Play'}
-          className="hover-lift"
-          style={{
-            width: 48, height: 48, borderRadius: '50%', background: '#fff',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: '#000', flexShrink: 0,
-            boxShadow: isPlaying
-              ? '0 2px 16px rgba(255,255,255,0.2), 0 0 30px rgba(139,92,246,0.2)'
-              : '0 2px 12px rgba(255,255,255,0.15)',
-            transition: 'box-shadow 0.3s, transform 80ms var(--ease-spring)',
-          }}
-          onMouseDown={(e) => { e.currentTarget.style.transform = 'scale(0.88)'; }}
-          onMouseUp={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
-          onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
-        >
-          {isPlaying ? <Icon.Pause size={20} /> : <Icon.Play size={20} />}
-        </button>
+        {/* Play/Pause */}
+        <TouchableOpacity style={styles.playBtn} onPress={(e) => { e.stopPropagation(); togglePlay(); }}>
+          <Text style={styles.playIcon}>{isPlaying ? '⏸' : '▶'}</Text>
+        </TouchableOpacity>
 
         {/* Next */}
-        <button onClick={next} aria-label="Next"
-          className="hover-lift"
-          style={{ color: 'var(--text-secondary)', padding: 4, display: 'flex', flexShrink: 0 }}>
-          <Icon.Next size={22} />
-        </button>
-      </div>
-    </div>
+        <TouchableOpacity style={styles.iconBtn} onPress={(e) => { e.stopPropagation(); next(); }}>
+          <Text style={styles.skipIcon}>⏭</Text>
+        </TouchableOpacity>
+      </Pressable>
+    </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    position: 'absolute',
+    left: 8,
+    right: 8,
+    height: layout.miniPlayerHeight,
+    backgroundColor: 'rgba(18, 18, 30, 0.94)',
+    borderRadius: borderRadius.lg,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.05)',
+    zIndex: 300,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.5,
+    shadowRadius: 16,
+    elevation: 10,
+  },
+  progressBar: {
+    height: 2,
+    backgroundColor: 'rgba(255,255,255,0.04)',
+  },
+  progressFill: {
+    height: '100%',
+    backgroundColor: colors.accent,
+    borderRadius: 1,
+  },
+  content: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    gap: 10,
+  },
+  artwork: {
+    width: 46,
+    height: 46,
+    borderRadius: borderRadius.sm,
+    overflow: 'hidden',
+    backgroundColor: colors.bgSurface,
+    borderWidth: 1.5,
+    borderColor: 'transparent',
+  },
+  artworkActive: {
+    borderColor: colors.accent,
+  },
+  artworkImage: {
+    width: '100%',
+    height: '100%',
+  },
+  trackInfo: {
+    flex: 1,
+    minWidth: 0,
+  },
+  title: {
+    fontSize: fontSize.sm,
+    fontWeight: fontWeight.semibold,
+    color: colors.textPrimary,
+  },
+  artist: {
+    fontSize: fontSize.xs,
+    color: colors.textTertiary,
+    marginTop: 1,
+  },
+  loadingDot: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    borderWidth: 2,
+    borderColor: colors.accent,
+    borderTopColor: 'transparent',
+    // Note: animate would need Animated API
+  },
+  iconBtn: {
+    padding: 4,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  heartIcon: {
+    fontSize: 16,
+    color: colors.textTertiary,
+  },
+  playBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.white,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  playIcon: {
+    fontSize: 16,
+    marginLeft: 2,
+  },
+  skipIcon: {
+    fontSize: 14,
+    color: colors.textTertiary,
+  },
+});
