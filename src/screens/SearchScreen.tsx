@@ -1,12 +1,13 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { View, Text, TextInput, ScrollView, TouchableOpacity, Image, StyleSheet, ActivityIndicator, Keyboard } from 'react-native';
+import { View, Text, TextInput, ScrollView, TouchableOpacity, Image, StyleSheet, ActivityIndicator } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors, spacing, borderRadius, fontSize, fontWeight, layout } from '../constants/theme';
+import { colors, borderRadius, fontSize, fontFamily, layout } from '../constants/theme';
 import { usePlayerStore } from '../store/playerStore';
 import { searchAll } from '../services/musicApi';
 import { Track, Artist, Album } from '../types';
 import SongActionSheet from '../components/SongActionSheet';
+import { SearchIcon, XIcon } from '../components/Icons';
 
 export default function SearchScreen() {
   const insets = useSafeAreaInsets();
@@ -58,13 +59,13 @@ export default function SearchScreen() {
       {/* Search Bar */}
       <View style={{ paddingHorizontal: layout.screenPadding, marginBottom: 20 }}>
         <View style={styles.searchBar}>
-          <Text style={styles.searchIcon}>⌕</Text>
+          <SearchIcon size={18} color={colors.textTertiary} />
           <TextInput style={styles.searchInput} value={query} onChangeText={handleChange}
             placeholder="What do you want to play?" placeholderTextColor={colors.textTertiary}
             returnKeyType="search" autoCorrect={false} />
           {query.length > 0 && (
             <TouchableOpacity onPress={() => { setQuery(''); setTracks([]); setArtists([]); setAlbums([]); setSearched(false); }}>
-              <Text style={styles.clearBtn}>✕</Text>
+              <XIcon size={16} color={colors.textSecondary} />
             </TouchableOpacity>
           )}
         </View>
@@ -131,6 +132,7 @@ export default function SearchScreen() {
 
       {!searched && !loading && (
         <View style={styles.emptyState}>
+          <SearchIcon size={48} color={colors.textMuted} />
           <Text style={styles.emptyTitle}>Search for music</Text>
           <Text style={styles.emptyDesc}>Find your favorite songs, artists, and albums</Text>
         </View>
@@ -143,31 +145,50 @@ export default function SearchScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bgBase },
-  searchBar: { flexDirection: 'row', alignItems: 'center', backgroundColor: colors.bgSurface, borderRadius: borderRadius.full, paddingHorizontal: 16, height: 48, borderWidth: 1, borderColor: colors.borderMedium },
-  searchIcon: { fontSize: 18, color: colors.textTertiary, marginRight: 10 },
-  searchInput: { flex: 1, fontSize: fontSize.base, color: colors.textPrimary, padding: 0 },
-  clearBtn: { fontSize: 14, color: colors.textSecondary, padding: 4 },
+  searchBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.bgSurface,
+    borderRadius: borderRadius.full,
+    paddingHorizontal: 16,
+    height: 48,
+    borderWidth: 1,
+    borderColor: colors.borderMedium,
+    gap: 10,
+  },
+  searchInput: {
+    flex: 1,
+    fontSize: fontSize.base,
+    fontFamily: fontFamily.regular,
+    color: colors.textPrimary,
+    padding: 0,
+  },
 
   section: { marginTop: 24, paddingHorizontal: layout.screenPadding },
-  sectionTitle: { fontSize: fontSize.lg, fontWeight: fontWeight.bold, color: colors.textPrimary, marginBottom: 12 },
+  sectionTitle: {
+    fontSize: fontSize.lg,
+    fontFamily: fontFamily.bold,
+    color: colors.textPrimary,
+    marginBottom: 12,
+  },
 
   songRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 8 },
   songArt: { width: 48, height: 48, borderRadius: borderRadius.sm },
   songInfo: { flex: 1, minWidth: 0 },
-  songTitle: { fontSize: fontSize.md, fontWeight: fontWeight.semibold, color: colors.textPrimary },
-  songArtist: { fontSize: fontSize.sm, color: colors.textSecondary, marginTop: 2 },
+  songTitle: { fontSize: fontSize.md, fontFamily: fontFamily.semibold, color: colors.textPrimary },
+  songArtist: { fontSize: fontSize.sm, fontFamily: fontFamily.regular, color: colors.textSecondary, marginTop: 2 },
 
   artistItem: { alignItems: 'center', width: 76 },
   artistCircle: { width: 76, height: 76, borderRadius: 38, overflow: 'hidden', borderWidth: 2, borderColor: 'rgba(255,255,255,0.05)', marginBottom: 8 },
   artistImage: { width: '100%', height: '100%' },
-  artistName: { fontSize: fontSize.xs, fontWeight: fontWeight.medium, color: colors.textPrimary, width: 76, textAlign: 'center' },
+  artistName: { fontSize: fontSize.xs, fontFamily: fontFamily.medium, color: colors.textPrimary, width: 76, textAlign: 'center' },
 
   albumItem: { width: 160 },
   albumArt: { width: 160, height: 160, borderRadius: borderRadius.md, marginBottom: 8 },
-  albumTitle: { fontSize: fontSize.sm, fontWeight: fontWeight.semibold, color: colors.textPrimary },
-  albumArtist: { fontSize: fontSize.xs, color: colors.textSecondary, marginTop: 2 },
+  albumTitle: { fontSize: fontSize.sm, fontFamily: fontFamily.semibold, color: colors.textPrimary },
+  albumArtist: { fontSize: fontSize.xs, fontFamily: fontFamily.regular, color: colors.textSecondary, marginTop: 2 },
 
-  emptyState: { alignItems: 'center', justifyContent: 'center', paddingVertical: 60, paddingHorizontal: 40 },
-  emptyTitle: { fontSize: fontSize.lg, fontWeight: fontWeight.semibold, color: colors.textPrimary, marginBottom: 8, textAlign: 'center' },
-  emptyDesc: { fontSize: fontSize.sm, color: colors.textSecondary, textAlign: 'center' },
+  emptyState: { alignItems: 'center', justifyContent: 'center', paddingVertical: 60, paddingHorizontal: 40, gap: 12 },
+  emptyTitle: { fontSize: fontSize.lg, fontFamily: fontFamily.semibold, color: colors.textPrimary, textAlign: 'center' },
+  emptyDesc: { fontSize: fontSize.sm, fontFamily: fontFamily.regular, color: colors.textSecondary, textAlign: 'center' },
 });

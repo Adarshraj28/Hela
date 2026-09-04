@@ -9,6 +9,12 @@ import { colors, borderRadius, fontSize, fontWeight, fontFamily } from '../const
 import { usePlayerStore } from '../store/playerStore';
 import { useLibraryStore } from '../store/libraryStore';
 import { getTrackLyrics, LyricLine } from '../services/musicApi';
+import {
+  ChevronDownIcon, MoreHorizontalIcon, HeartIcon, ShareIcon,
+  PlayIcon, PauseIcon, SkipBackIcon, SkipForwardIcon,
+  ShuffleIcon, RepeatIcon, RepeatOneIcon, QueueIcon,
+  MusicNoteIcon, LyricsIcon,
+} from './Icons';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const ARTWORK_SIZE = Math.min(SCREEN_WIDTH - 48, SCREEN_HEIGHT * 0.38);
@@ -22,17 +28,13 @@ export default function FullPlayer() {
   } = usePlayerStore();
   const { isFavorite, addFavorite, removeFavorite, addToRecentlyPlayed } = useLibraryStore();
 
-  const [view, setView] = useState<'highlight' | 'lyrics' | 'embed'>('highlight');
+  const [view, setView] = useState<'highlight' | 'lyrics'>('highlight');
   const [lyrics, setLyrics] = useState<LyricLine[]>([]);
   const [lyricsLoading, setLyricsLoading] = useState(false);
 
-  // Animated values for artwork transition
-  const artworkAnim = useRef(new Animated.Value(0)).current;
   const prevTrackId = useRef<string | undefined>(undefined);
   const fadeAnim = useRef(new Animated.Value(1)).current;
   const scaleAnim = useRef(new Animated.Value(1)).current;
-
-  // Ambient background color derived from artwork dominant color
   const [ambientColor, setAmbientColor] = useState('rgba(139, 92, 246, 0.08)');
 
   const isLiked = currentTrack ? isFavorite(currentTrack.id) : false;
@@ -41,7 +43,6 @@ export default function FullPlayer() {
   // Animate artwork on track change
   useEffect(() => {
     if (prevTrackId.current && prevTrackId.current !== currentTrack?.id) {
-      // Crossfade: fade out old, fade in new
       Animated.sequence([
         Animated.parallel([
           Animated.timing(fadeAnim, { toValue: 0, duration: 200, useNativeDriver: true }),
@@ -55,13 +56,12 @@ export default function FullPlayer() {
     }
     prevTrackId.current = currentTrack?.id;
 
-    // Subtle ambient color shift based on artwork index
     const hues = [
-      'rgba(139, 92, 246, 0.08)',  // purple
-      'rgba(236, 72, 153, 0.06)',  // pink
-      'rgba(59, 130, 246, 0.06)',  // blue
-      'rgba(34, 197, 94, 0.05)',   // green
-      'rgba(249, 115, 22, 0.05)',  // orange
+      'rgba(139, 92, 246, 0.08)',
+      'rgba(236, 72, 153, 0.06)',
+      'rgba(59, 130, 246, 0.06)',
+      'rgba(34, 197, 94, 0.05)',
+      'rgba(249, 115, 22, 0.05)',
     ];
     const idx = currentTrack ? Math.abs(hashCode(currentTrack.id)) % hues.length : 0;
     setAmbientColor(hues[idx]);
@@ -116,35 +116,29 @@ export default function FullPlayer() {
       <View style={styles.container}>
         {/* Ambient artwork background */}
         <Animated.View style={[styles.ambientBg, { opacity: fadeAnim }]}>
-          <Image
-            source={{ uri: currentTrack.artwork }}
-            style={styles.ambientImage}
-            blurRadius={60}
-          />
+          <Image source={{ uri: currentTrack.artwork }} style={styles.ambientImage} blurRadius={60} />
           <View style={styles.ambientOverlay} />
         </Animated.View>
 
         {/* Top bar */}
         <View style={[styles.topBar, { paddingTop: insets.top + 8 }]}>
           <TouchableOpacity style={styles.topBtn} onPress={toggleFullPlayer} activeOpacity={0.7}>
-            <View style={styles.chevronDown}>
-              <View style={styles.chevronLine} />
-            </View>
+            <ChevronDownIcon size={22} color={colors.textSecondary} />
           </TouchableOpacity>
 
           <View style={styles.tabBar}>
-            {(['highlight', 'lyrics', 'embed'] as const).map(v => (
+            {(['highlight', 'lyrics'] as const).map(v => (
               <TouchableOpacity key={v} style={[styles.tab, view === v && styles.tabActive]}
                 onPress={() => setView(v)} activeOpacity={0.7}>
                 <Text style={[styles.tabText, view === v && styles.tabTextActive]}>
-                  {v === 'highlight' ? 'Highlight' : v === 'lyrics' ? 'Lyrics' : 'Video'}
+                  {v === 'highlight' ? 'Highlight' : 'Lyrics'}
                 </Text>
               </TouchableOpacity>
             ))}
           </View>
 
           <TouchableOpacity style={styles.topBtn} activeOpacity={0.7}>
-            <Text style={styles.moreDots}>•••</Text>
+            <MoreHorizontalIcon size={20} color={colors.textSecondary} />
           </TouchableOpacity>
         </View>
 
@@ -154,15 +148,14 @@ export default function FullPlayer() {
             <>
               {/* Artwork with ambient glow */}
               <View style={styles.artworkGlowContainer}>
-                <View style={[styles.artworkGlow, { backgroundColor: ambientColor.replace('0.08', '0.3').replace('0.06', '0.25').replace('0.05', '0.2') }]} />
+                <View style={[styles.artworkGlow, {
+                  backgroundColor: ambientColor.replace('0.08', '0.3').replace('0.06', '0.25').replace('0.05', '0.2'),
+                }]} />
                 <Animated.View style={[
                   styles.artworkContainer,
                   { opacity: fadeAnim, transform: [{ scale: scaleAnim }] },
                 ]}>
-                  <Image
-                    source={{ uri: currentTrack.artwork }}
-                    style={styles.artwork}
-                  />
+                  <Image source={{ uri: currentTrack.artwork }} style={styles.artwork} />
                 </Animated.View>
               </View>
 
@@ -188,29 +181,31 @@ export default function FullPlayer() {
               {/* Transport controls */}
               <View style={styles.transport}>
                 <TouchableOpacity style={styles.transportBtn} onPress={toggleShuffle} activeOpacity={0.7}>
-                  <Text style={[styles.transportIcon, shuffle && { color: colors.accent }]}>⇌</Text>
+                  <ShuffleIcon size={22} color={shuffle ? colors.accent : colors.textSecondary} />
                 </TouchableOpacity>
 
                 <TouchableOpacity style={styles.transportBtn} onPress={previous} activeOpacity={0.7}>
                   <View style={styles.prevNextBtn}>
-                    <Text style={styles.skipIcon}>◀◀</Text>
+                    <SkipBackIcon size={20} color={colors.textPrimary} />
                   </View>
                 </TouchableOpacity>
 
                 <TouchableOpacity style={styles.playPauseBtn} onPress={togglePlay} activeOpacity={0.8}>
-                  <Text style={styles.playPauseIcon}>{isPlaying ? '⏸' : '▶'}</Text>
+                  {isPlaying ? <PauseIcon size={30} color={colors.bgBase} /> : <PlayIcon size={30} color={colors.bgBase} />}
                 </TouchableOpacity>
 
                 <TouchableOpacity style={styles.transportBtn} onPress={next} activeOpacity={0.7}>
                   <View style={styles.prevNextBtn}>
-                    <Text style={styles.skipIcon}>▶▶</Text>
+                    <SkipForwardIcon size={20} color={colors.textPrimary} />
                   </View>
                 </TouchableOpacity>
 
                 <TouchableOpacity style={styles.transportBtn} onPress={cycleRepeat} activeOpacity={0.7}>
-                  <Text style={[styles.transportIcon, repeat !== 'off' && { color: colors.accent }]}>
-                    {repeat === 'one' ? '↻¹' : '↻'}
-                  </Text>
+                  {repeat === 'one' ? (
+                    <RepeatOneIcon size={22} color={colors.accent} />
+                  ) : (
+                    <RepeatIcon size={22} color={repeat === 'all' ? colors.accent : colors.textSecondary} />
+                  )}
                 </TouchableOpacity>
               </View>
 
@@ -220,23 +215,25 @@ export default function FullPlayer() {
                   style={styles.secondaryBtn}
                   onPress={() => isLiked ? removeFavorite(currentTrack.id) : addFavorite(currentTrack)}
                   activeOpacity={0.7}>
-                  <Text style={[styles.secondaryIcon, isLiked && styles.heartActive]}>♥</Text>
+                  <HeartIcon size={22} color={isLiked ? colors.accentPink : colors.textTertiary} filled={isLiked} />
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.secondaryBtn} activeOpacity={0.7}>
-                  <Text style={styles.secondaryIcon}>↗</Text>
+                  <ShareIcon size={22} color={colors.textTertiary} />
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.secondaryBtn} activeOpacity={0.7}>
-                  <Text style={styles.secondaryIcon}>⋯</Text>
+                  <QueueIcon size={22} color={colors.textTertiary} />
                 </TouchableOpacity>
               </View>
 
               {/* Bottom buttons */}
               <View style={styles.bottomBtns}>
                 <TouchableOpacity style={styles.bottomBtn} activeOpacity={0.7}>
-                  <Text style={styles.bottomBtnText}>⚙ Equalizer</Text>
+                  <MusicNoteIcon size={16} color={colors.textSecondary} />
+                  <Text style={styles.bottomBtnText}>Equalizer</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.bottomBtn} activeOpacity={0.7}>
-                  <Text style={styles.bottomBtnText}>☰ Queue List</Text>
+                  <QueueIcon size={16} color={colors.textSecondary} />
+                  <Text style={styles.bottomBtnText}>Queue List</Text>
                 </TouchableOpacity>
               </View>
             </>
@@ -259,30 +256,18 @@ export default function FullPlayer() {
                     const lineEnd = i < lyrics.length - 1 ? lyrics[i + 1].startTimeMs / 1000 : duration;
                     const isActive = progress >= lineStart && progress < lineEnd;
                     return (
-                      <Text
-                        key={i}
-                        style={[styles.lyricLine, isActive && styles.lyricLineActive]}
-                      >
+                      <Text key={i} style={[styles.lyricLine, isActive && styles.lyricLineActive]}>
                         {line.words}
                       </Text>
                     );
                   })}
                 </ScrollView>
               ) : (
-                <Text style={styles.lyricsPlaceholder}>No lyrics available for this track</Text>
+                <View style={styles.noLyricsContainer}>
+                  <LyricsIcon size={48} color={colors.textMuted} />
+                  <Text style={styles.lyricsPlaceholder}>No lyrics available for this track</Text>
+                </View>
               )}
-            </View>
-          )}
-
-          {view === 'embed' && (
-            <View style={styles.embedContainer}>
-              <Text style={styles.embedTitle}>{currentTrack.title}</Text>
-              <Text style={styles.embedArtist}>{currentTrack.artist}</Text>
-              <View style={styles.embedPlaceholder}>
-                <Text style={styles.embedPlaceholderIcon}>♪</Text>
-                <Text style={styles.embedText}>Apple Music</Text>
-                <Text style={styles.embedSubtext}>Full song playback</Text>
-              </View>
             </View>
           )}
         </View>
@@ -291,7 +276,6 @@ export default function FullPlayer() {
   );
 }
 
-// Simple string hash for deterministic color selection
 function hashCode(str: string): number {
   let hash = 0;
   for (let i = 0; i < str.length; i++) {
@@ -341,25 +325,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  chevronDown: {
-    width: 18,
-    height: 10,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  chevronLine: {
-    width: 18,
-    height: 2.5,
-    borderRadius: 1.25,
-    backgroundColor: colors.textSecondary,
-    transform: [{ rotate: '0deg' }],
-  },
-  moreDots: {
-    fontSize: 16,
-    color: colors.textSecondary,
-    letterSpacing: 2,
-    marginTop: -2,
-  },
   tabBar: {
     flexDirection: 'row',
     backgroundColor: 'rgba(255,255,255,0.06)',
@@ -377,7 +342,6 @@ const styles = StyleSheet.create({
   tabText: {
     fontFamily: fontFamily.semibold,
     fontSize: fontSize.sm,
-    fontWeight: fontWeight.semibold,
     color: colors.textTertiary,
     letterSpacing: 0.3,
   },
@@ -435,7 +399,6 @@ const styles = StyleSheet.create({
   trackTitle: {
     fontFamily: fontFamily.bold,
     fontSize: fontSize.xl,
-    fontWeight: fontWeight.bold,
     color: colors.white,
     letterSpacing: -0.4,
     textAlign: 'center',
@@ -443,7 +406,6 @@ const styles = StyleSheet.create({
   trackArtist: {
     fontFamily: fontFamily.medium,
     fontSize: fontSize.md,
-    fontWeight: fontWeight.medium,
     color: colors.textSecondary,
     marginTop: 6,
     textAlign: 'center',
@@ -509,23 +471,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  transportIcon: {
-    fontSize: 22,
-    color: colors.textSecondary,
-  },
   prevNextBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     backgroundColor: 'rgba(255,255,255,0.06)',
     alignItems: 'center',
     justifyContent: 'center',
-  },
-  skipIcon: {
-    fontSize: 13,
-    color: colors.textPrimary,
-    letterSpacing: -2,
-    marginLeft: 1,
   },
   playPauseBtn: {
     width: 68,
@@ -539,11 +491,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.25,
     shadowRadius: 20,
     elevation: 10,
-  },
-  playPauseIcon: {
-    fontSize: 30,
-    marginLeft: 3,
-    color: colors.bgBase,
   },
 
   // Secondary actions
@@ -559,14 +506,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  secondaryIcon: {
-    fontSize: 22,
-    color: colors.textTertiary,
-  },
-  heartActive: {
-    color: colors.accentPink,
-    transform: [{ scale: 1.15 }],
-  },
 
   // Bottom buttons
   bottomBtns: {
@@ -577,17 +516,19 @@ const styles = StyleSheet.create({
   },
   bottomBtn: {
     flex: 1,
+    flexDirection: 'row',
     paddingVertical: 12,
     borderRadius: borderRadius.full,
     backgroundColor: 'rgba(255,255,255,0.05)',
     borderWidth: 1,
     borderColor: 'rgba(255,255,255,0.06)',
     alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
   },
   bottomBtnText: {
     fontFamily: fontFamily.semibold,
     fontSize: fontSize.sm,
-    fontWeight: fontWeight.semibold,
     color: colors.textSecondary,
     letterSpacing: 0.3,
   },
@@ -602,7 +543,6 @@ const styles = StyleSheet.create({
   lyricsTrackTitle: {
     fontFamily: fontFamily.bold,
     fontSize: fontSize.lg,
-    fontWeight: fontWeight.bold,
     color: colors.textPrimary,
     marginBottom: 4,
     letterSpacing: -0.3,
@@ -610,7 +550,6 @@ const styles = StyleSheet.create({
   lyricsTrackArtist: {
     fontFamily: fontFamily.medium,
     fontSize: fontSize.sm,
-    fontWeight: fontWeight.medium,
     color: colors.textSecondary,
     marginBottom: 32,
     letterSpacing: 0.2,
@@ -622,7 +561,6 @@ const styles = StyleSheet.create({
   lyricLine: {
     fontFamily: fontFamily.semibold,
     fontSize: fontSize.xl,
-    fontWeight: fontWeight.semibold,
     color: colors.textTertiary,
     textAlign: 'center',
     paddingVertical: 8,
@@ -633,62 +571,16 @@ const styles = StyleSheet.create({
     fontFamily: fontFamily.bold,
     color: colors.white,
     fontSize: fontSize.xl + 2,
-    fontWeight: fontWeight.bold,
+  },
+  noLyricsContainer: {
+    alignItems: 'center',
+    paddingTop: 40,
+    gap: 16,
   },
   lyricsPlaceholder: {
     fontSize: fontSize.md,
     color: colors.textTertiary,
-    marginTop: 40,
     textAlign: 'center',
-    letterSpacing: 0.2,
-  },
-
-  // Embed
-  embedContainer: {
-    flex: 1,
-    alignItems: 'center',
-    paddingTop: 20,
-    width: '100%',
-  },
-  embedTitle: {
-    fontSize: fontSize.lg,
-    fontWeight: fontWeight.bold,
-    color: colors.white,
-    marginBottom: 4,
-    letterSpacing: -0.3,
-  },
-  embedArtist: {
-    fontSize: fontSize.sm,
-    fontWeight: fontWeight.medium,
-    color: colors.textSecondary,
-    marginBottom: 28,
-  },
-  embedPlaceholder: {
-    width: '100%',
-    height: 300,
-    borderRadius: borderRadius.lg,
-    backgroundColor: colors.bgSurface,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.05)',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  embedPlaceholderIcon: {
-    fontSize: 48,
-    color: colors.accent,
-    marginBottom: 12,
-  },
-  embedText: {
-    fontFamily: fontFamily.bold,
-    fontSize: fontSize.lg,
-    fontWeight: fontWeight.bold,
-    color: colors.textPrimary,
-    letterSpacing: -0.3,
-  },
-  embedSubtext: {
-    fontSize: fontSize.sm,
-    color: colors.textTertiary,
-    marginTop: 6,
     letterSpacing: 0.2,
   },
 });

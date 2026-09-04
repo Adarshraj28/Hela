@@ -1,14 +1,15 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Image, StyleSheet, RefreshControl, Dimensions } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Image, StyleSheet, RefreshControl, Animated, Easing } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors, spacing, borderRadius, fontSize, fontWeight, layout } from '../constants/theme';
+import { colors, spacing, borderRadius, fontSize, fontWeight, fontFamily, layout } from '../constants/theme';
 import { usePlayerStore } from '../store/playerStore';
 import { useLibraryStore } from '../store/libraryStore';
 import { getGreeting } from '../utils/formatTime';
 import * as api from '../services/musicApi';
 import { Track, Artist, Album } from '../types';
 import SongActionSheet from '../components/SongActionSheet';
+import { BellIcon } from '../components/Icons';
 
 const CARD_SIZE = 160;
 const ARTIST_SIZE = 76;
@@ -63,18 +64,19 @@ export default function HomeScreen() {
     >
       {/* Welcome Header */}
       <View style={styles.header}>
-        <View>
+        <View style={styles.headerLeft}>
           <Text style={styles.greeting}>{greeting}</Text>
           <Text style={styles.subtitle}>Wanna feel spirit today ?</Text>
         </View>
         <View style={styles.headerActions}>
           <TouchableOpacity style={styles.iconBtn} activeOpacity={0.7}>
-            <Text style={styles.bellIcon}>🔔</Text>
+            <BellIcon size={20} color={colors.textSecondary} />
             <View style={styles.notifDot} />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.avatarBtn} activeOpacity={0.7} onPress={() => navigation.navigate('SettingsTab')}>
+          <TouchableOpacity style={styles.avatarBtn} activeOpacity={0.7}
+            onPress={() => navigation.navigate('SettingsTab')}>
             <View style={styles.avatar}>
-              <Text style={styles.avatarText}>F</Text>
+              <Text style={styles.avatarText}>H</Text>
             </View>
           </TouchableOpacity>
         </View>
@@ -106,7 +108,7 @@ export default function HomeScreen() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Recently Played</Text>
-            <TouchableOpacity onPress={() => navigation.navigate('LibraryTab')}>
+            <TouchableOpacity onPress={() => navigation.navigate('LibraryTab')} activeOpacity={0.7}>
               <Text style={styles.seeMore}>See More</Text>
             </TouchableOpacity>
           </View>
@@ -128,7 +130,7 @@ export default function HomeScreen() {
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Your Favorites</Text>
-            <TouchableOpacity onPress={() => navigation.navigate('LibraryTab')}>
+            <TouchableOpacity onPress={() => navigation.navigate('LibraryTab')} activeOpacity={0.7}>
               <Text style={styles.seeMore}>See More</Text>
             </TouchableOpacity>
           </View>
@@ -196,38 +198,117 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.bgBase },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', paddingHorizontal: layout.screenPadding, marginBottom: 24 },
-  greeting: { fontSize: fontSize.xxl, fontWeight: fontWeight.bold, color: colors.textPrimary, letterSpacing: -0.5 },
-  subtitle: { fontSize: fontSize.sm, color: colors.textSecondary, marginTop: 4 },
+
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    paddingHorizontal: layout.screenPadding,
+    marginBottom: 24,
+  },
+  headerLeft: { flex: 1 },
+  greeting: {
+    fontSize: fontSize.xxl,
+    fontFamily: fontFamily.bold,
+    color: colors.textPrimary,
+    letterSpacing: -0.5,
+  },
+  subtitle: {
+    fontSize: fontSize.sm,
+    fontFamily: fontFamily.regular,
+    color: colors.textSecondary,
+    marginTop: 4,
+  },
   headerActions: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  iconBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: 'rgba(255,255,255,0.04)', alignItems: 'center', justifyContent: 'center', position: 'relative' },
-  bellIcon: { fontSize: 16 },
-  notifDot: { position: 'absolute', top: 8, right: 10, width: 7, height: 7, borderRadius: 4, backgroundColor: colors.accentPink, borderWidth: 2, borderColor: colors.bgBase },
+  iconBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+  },
+  notifDot: {
+    position: 'absolute',
+    top: 8,
+    right: 10,
+    width: 7,
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: colors.accentPink,
+    borderWidth: 2,
+    borderColor: colors.bgBase,
+  },
   avatarBtn: {},
-  avatar: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.accent, alignItems: 'center', justifyContent: 'center', borderWidth: 2, borderColor: 'rgba(139,92,246,0.3)' },
-  avatarText: { fontSize: fontSize.md, fontWeight: fontWeight.bold, color: colors.white },
+  avatar: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.accent,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 2,
+    borderColor: 'rgba(139,92,246,0.3)',
+  },
+  avatarText: {
+    fontSize: fontSize.md,
+    fontFamily: fontFamily.bold,
+    color: colors.white,
+  },
 
   section: { marginTop: 28 },
-  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: layout.screenPadding, marginBottom: 12 },
-  sectionTitle: { fontSize: fontSize.lg, fontWeight: fontWeight.bold, color: colors.textPrimary, letterSpacing: -0.3, paddingHorizontal: layout.screenPadding, marginBottom: 12 },
-  seeMore: { fontSize: fontSize.sm, color: colors.textSecondary, fontWeight: fontWeight.medium },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingHorizontal: layout.screenPadding,
+    marginBottom: 12,
+  },
+  sectionTitle: {
+    fontSize: fontSize.lg,
+    fontFamily: fontFamily.bold,
+    color: colors.textPrimary,
+    letterSpacing: -0.3,
+    paddingHorizontal: layout.screenPadding,
+    marginBottom: 12,
+  },
+  seeMore: {
+    fontSize: fontSize.sm,
+    color: colors.textSecondary,
+    fontFamily: fontFamily.medium,
+  },
 
   artistItem: { alignItems: 'center', width: ARTIST_SIZE },
-  artistCircle: { width: ARTIST_SIZE, height: ARTIST_SIZE, borderRadius: ARTIST_SIZE / 2, overflow: 'hidden', borderWidth: 2.5, borderColor: 'rgba(255,255,255,0.05)', marginBottom: 8 },
+  artistCircle: {
+    width: ARTIST_SIZE,
+    height: ARTIST_SIZE,
+    borderRadius: ARTIST_SIZE / 2,
+    overflow: 'hidden',
+    borderWidth: 2.5,
+    borderColor: 'rgba(255,255,255,0.05)',
+    marginBottom: 8,
+  },
   artistImage: { width: '100%', height: '100%' },
-  artistName: { fontSize: fontSize.xs, fontWeight: fontWeight.medium, color: colors.textPrimary, textAlign: 'center', width: ARTIST_SIZE },
+  artistName: {
+    fontSize: fontSize.xs,
+    fontFamily: fontFamily.medium,
+    color: colors.textPrimary,
+    textAlign: 'center',
+    width: ARTIST_SIZE,
+  },
 
   cardItem: { width: CARD_SIZE },
   cardImage: { width: CARD_SIZE, height: CARD_SIZE, borderRadius: borderRadius.md, marginBottom: 8 },
-  cardTitle: { fontSize: fontSize.sm, fontWeight: fontWeight.semibold, color: colors.textPrimary },
-  cardSubtitle: { fontSize: fontSize.xs, color: colors.textSecondary, marginTop: 2 },
+  cardTitle: { fontSize: fontSize.sm, fontFamily: fontFamily.semibold, color: colors.textPrimary },
+  cardSubtitle: { fontSize: fontSize.xs, fontFamily: fontFamily.regular, color: colors.textSecondary, marginTop: 2 },
 
   songRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, gap: 12 },
-  songIndex: { width: 20, textAlign: 'center', fontSize: fontSize.sm, color: colors.textMuted, fontWeight: fontWeight.medium },
+  songIndex: { width: 20, textAlign: 'center', fontSize: fontSize.sm, color: colors.textMuted, fontFamily: fontFamily.medium },
   songArt: { width: 46, height: 46, borderRadius: borderRadius.sm },
   songInfo: { flex: 1, minWidth: 0 },
-  songTitle: { fontSize: fontSize.md, fontWeight: fontWeight.semibold, color: colors.textPrimary },
-  songArtist: { fontSize: fontSize.sm, color: colors.textSecondary, marginTop: 2 },
+  songTitle: { fontSize: fontSize.md, fontFamily: fontFamily.semibold, color: colors.textPrimary },
+  songArtist: { fontSize: fontSize.sm, fontFamily: fontFamily.regular, color: colors.textSecondary, marginTop: 2 },
 
   skeleton: { backgroundColor: colors.bgSurface, overflow: 'hidden' },
   skeletonText: { width: 50, height: 10, borderRadius: 4, marginTop: 8 },

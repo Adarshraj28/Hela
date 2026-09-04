@@ -1,9 +1,11 @@
 import React from 'react';
+import { View, Text, StyleSheet, Platform } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import { View, Text, StyleSheet } from 'react-native';
-import { colors, fontSize } from '../constants/theme';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { colors, fontSize, fontWeight } from '../constants/theme';
+import { HomeIcon, SearchIcon, LibraryIcon, SettingsIcon } from '../components/Icons';
 
 // Screens
 import HomeScreen from '../screens/HomeScreen';
@@ -17,58 +19,49 @@ import PlaylistScreen from '../screens/PlaylistScreen';
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
 
-function HomeIcon({ focused }: { focused: boolean }) {
-  return (
-    <View style={styles.iconContainer}>
-      <Text style={[styles.icon, focused && styles.iconFocused]}>⌂</Text>
-      {focused && <View style={styles.dot} />}
-    </View>
-  );
-}
-
-function SearchIcon({ focused }: { focused: boolean }) {
-  return (
-    <View style={styles.iconContainer}>
-      <Text style={[styles.icon, focused && styles.iconFocused]}>⌕</Text>
-      {focused && <View style={styles.dot} />}
-    </View>
-  );
-}
-
-function LibraryIcon({ focused }: { focused: boolean }) {
-  return (
-    <View style={styles.iconContainer}>
-      <Text style={[styles.icon, focused && styles.iconFocused]}>♫</Text>
-      {focused && <View style={styles.dot} />}
-    </View>
-  );
-}
-
-function SettingsIcon({ focused }: { focused: boolean }) {
-  return (
-    <View style={styles.iconContainer}>
-      <Text style={[styles.icon, focused && styles.iconFocused]}>⚙</Text>
-      {focused && <View style={styles.dot} />}
-    </View>
-  );
-}
+const TAB_ICONS: Record<string, React.FC<{ focused: boolean }>> = {
+  HomeTab: ({ focused }) => <HomeIcon size={22} color={focused ? colors.white : colors.textTertiary} />,
+  SearchTab: ({ focused }) => <SearchIcon size={22} color={focused ? colors.white : colors.textTertiary} />,
+  LibraryTab: ({ focused }) => <LibraryIcon size={22} color={focused ? colors.white : colors.textTertiary} />,
+  SettingsTab: ({ focused }) => <SettingsIcon size={22} color={focused ? colors.white : colors.textTertiary} />,
+};
 
 function TabNavigator() {
+  const insets = useSafeAreaInsets();
+  const bottomPad = Math.max(insets.bottom - 4, 0);
+
   return (
     <Tab.Navigator
-      screenOptions={{
+      screenOptions={({ route }) => ({
         headerShown: false,
-        tabBarStyle: styles.tabBar,
+        tabBarIcon: ({ focused }) => {
+          const Icon = TAB_ICONS[route.name];
+          return Icon ? <Icon focused={focused} /> : null;
+        },
+        tabBarStyle: {
+          backgroundColor: 'rgba(8, 8, 16, 0.97)',
+          borderTopColor: 'rgba(255,255,255,0.04)',
+          borderTopWidth: 1,
+          height: 60 + bottomPad,
+          paddingBottom: bottomPad + 6,
+          paddingTop: 6,
+          elevation: 0,
+        },
         tabBarActiveTintColor: colors.white,
         tabBarInactiveTintColor: colors.textTertiary,
         tabBarShowLabel: true,
-        tabBarLabelStyle: styles.tabLabel,
-      }}
+        tabBarLabelStyle: {
+          fontSize: 10,
+          fontWeight: '500' as const,
+          fontFamily: 'SpaceGrotesk_500Medium',
+          marginTop: 2,
+        },
+      })}
     >
-      <Tab.Screen name="HomeTab" component={HomeScreen} options={{ tabBarLabel: 'Home', tabBarIcon: ({ focused }) => <HomeIcon focused={focused} /> }} />
-      <Tab.Screen name="SearchTab" component={SearchScreen} options={{ tabBarLabel: 'Search', tabBarIcon: ({ focused }) => <SearchIcon focused={focused} /> }} />
-      <Tab.Screen name="LibraryTab" component={LibraryScreen} options={{ tabBarLabel: 'Library', tabBarIcon: ({ focused }) => <LibraryIcon focused={focused} /> }} />
-      <Tab.Screen name="SettingsTab" component={SettingsScreen} options={{ tabBarLabel: 'Setting', tabBarIcon: ({ focused }) => <SettingsIcon focused={focused} /> }} />
+      <Tab.Screen name="HomeTab" component={HomeScreen} options={{ tabBarLabel: 'Home' }} />
+      <Tab.Screen name="SearchTab" component={SearchScreen} options={{ tabBarLabel: 'Search' }} />
+      <Tab.Screen name="LibraryTab" component={LibraryScreen} options={{ tabBarLabel: 'Library' }} />
+      <Tab.Screen name="SettingsTab" component={SettingsScreen} options={{ tabBarLabel: 'Setting' }} />
     </Tab.Navigator>
   );
 }
@@ -85,41 +78,3 @@ export default function AppNavigation() {
     </NavigationContainer>
   );
 }
-
-const styles = StyleSheet.create({
-  tabBar: {
-    position: 'absolute',
-    backgroundColor: 'rgba(8, 8, 16, 0.96)',
-    borderTopColor: 'rgba(255,255,255,0.04)',
-    borderTopWidth: 1,
-    height: 64,
-    paddingBottom: 8,
-    paddingTop: 8,
-    elevation: 0,
-  },
-  tabLabel: {
-    fontSize: fontSize.xs,
-    fontWeight: '500' as const,
-    marginTop: 2,
-  },
-  iconContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    position: 'relative',
-  },
-  icon: {
-    fontSize: 20,
-    color: colors.textTertiary,
-  },
-  iconFocused: {
-    color: colors.white,
-  },
-  dot: {
-    position: 'absolute',
-    bottom: -6,
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: colors.accent,
-  },
-});

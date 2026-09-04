@@ -1,14 +1,17 @@
 import React, { useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity, StyleSheet, Modal,
-  Pressable, ScrollView,
+  Pressable, ScrollView, Image,
 } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
-import { colors, borderRadius, fontSize, fontWeight } from '../constants/theme';
+import { colors, borderRadius, fontSize, fontWeight, fontFamily } from '../constants/theme';
 import { usePlayerStore } from '../store/playerStore';
 import { useLibraryStore } from '../store/libraryStore';
 import { usePlaylistStore } from '../store/playlistStore';
 import { Track } from '../types';
+import {
+  PlayIcon, SkipForwardIcon, HeartIcon, PlusIcon, UserIcon, DiscIcon, MusicNoteIcon, ArrowLeftIcon,
+} from './Icons';
 
 interface Props {
   track: Track | null;
@@ -46,7 +49,11 @@ export default function SongActionSheet({ track, visible, onClose }: Props) {
           {/* Track info header */}
           <View style={styles.header}>
             <View style={styles.artwork}>
-              <Text style={styles.artworkIcon}>♫</Text>
+              {track.artwork ? (
+                <Image source={{ uri: track.artwork }} style={styles.artworkImage} />
+              ) : (
+                <MusicNoteIcon size={22} color={colors.white} />
+              )}
             </View>
             <View style={styles.trackInfo}>
               <Text style={styles.trackTitle} numberOfLines={1}>{track.title}</Text>
@@ -62,7 +69,7 @@ export default function SongActionSheet({ track, visible, onClose }: Props) {
                 playTrack(track);
                 onClose();
               }}>
-                <Text style={styles.actionIcon}>▶</Text>
+                <PlayIcon size={18} color={colors.textPrimary} />
                 <Text style={styles.actionText}>Play</Text>
               </TouchableOpacity>
 
@@ -70,7 +77,7 @@ export default function SongActionSheet({ track, visible, onClose }: Props) {
                 next();
                 onClose();
               }}>
-                <Text style={styles.actionIcon}>⏭</Text>
+                <SkipForwardIcon size={18} color={colors.textPrimary} />
                 <Text style={styles.actionText}>Play Next</Text>
               </TouchableOpacity>
 
@@ -78,14 +85,14 @@ export default function SongActionSheet({ track, visible, onClose }: Props) {
                 isLiked ? removeFavorite(track.id) : addFavorite(track);
                 onClose();
               }}>
-                <Text style={[styles.actionIcon, isLiked && { color: colors.accentPink }]}>♥</Text>
+                <HeartIcon size={18} color={isLiked ? colors.accentPink : colors.textPrimary} filled={isLiked} />
                 <Text style={[styles.actionText, isLiked && { color: colors.accentPink }]}>
                   {isLiked ? 'Unlike' : 'Like'}
                 </Text>
               </TouchableOpacity>
 
               <TouchableOpacity style={styles.actionRow} onPress={() => setShowPlaylists(true)}>
-                <Text style={styles.actionIcon}>+♫</Text>
+                <PlusIcon size={18} color={colors.textPrimary} />
                 <Text style={styles.actionText}>Add to Playlist</Text>
               </TouchableOpacity>
 
@@ -94,7 +101,7 @@ export default function SongActionSheet({ track, visible, onClose }: Props) {
                   onClose();
                   navigation.navigate('Artist', { id: track.artistId });
                 }}>
-                  <Text style={styles.actionIcon}>👤</Text>
+                  <UserIcon size={18} color={colors.textPrimary} />
                   <Text style={styles.actionText}>Go to Artist</Text>
                 </TouchableOpacity>
               )}
@@ -104,7 +111,7 @@ export default function SongActionSheet({ track, visible, onClose }: Props) {
                   onClose();
                   navigation.navigate('Album', { id: track.albumId });
                 }}>
-                  <Text style={styles.actionIcon}>💿</Text>
+                  <DiscIcon size={18} color={colors.textPrimary} />
                   <Text style={styles.actionText}>Go to Album</Text>
                 </TouchableOpacity>
               )}
@@ -112,7 +119,7 @@ export default function SongActionSheet({ track, visible, onClose }: Props) {
           ) : (
             <ScrollView style={styles.actions} showsVerticalScrollIndicator={false}>
               <TouchableOpacity style={styles.actionRow} onPress={() => setShowCreateInput(true)}>
-                <Text style={[styles.actionIcon, { color: colors.accent }]}>+</Text>
+                <PlusIcon size={18} color={colors.accent} />
                 <Text style={[styles.actionText, { color: colors.accent }]}>Create New Playlist</Text>
               </TouchableOpacity>
 
@@ -139,7 +146,7 @@ export default function SongActionSheet({ track, visible, onClose }: Props) {
                   addTrackToPlaylist(p.id, track);
                   onClose();
                 }}>
-                  <Text style={styles.actionIcon}>♫</Text>
+                  <MusicNoteIcon size={18} color={colors.accent} />
                   <View style={{ flex: 1 }}>
                     <Text style={styles.actionText}>{p.name}</Text>
                     <Text style={styles.actionSubtext}>{p.tracks.length} tracks</Text>
@@ -148,7 +155,7 @@ export default function SongActionSheet({ track, visible, onClose }: Props) {
               ))}
 
               <TouchableOpacity style={styles.actionRow} onPress={() => setShowPlaylists(false)}>
-                <Text style={[styles.actionIcon, { color: colors.textTertiary }]}>←</Text>
+                <ArrowLeftIcon size={18} color={colors.textTertiary} />
                 <Text style={[styles.actionText, { color: colors.textTertiary }]}>Back</Text>
               </TouchableOpacity>
             </ScrollView>
@@ -183,12 +190,17 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   artwork: {
-    width: 48,
-    height: 48,
-    borderRadius: 8,
-    backgroundColor: colors.accent,
+    width: 52,
+    height: 52,
+    borderRadius: 10,
+    backgroundColor: colors.bgSurface,
     alignItems: 'center',
     justifyContent: 'center',
+    overflow: 'hidden',
+  },
+  artworkImage: {
+    width: '100%',
+    height: '100%',
   },
   artworkIcon: {
     fontSize: 20,
@@ -200,11 +212,12 @@ const styles = StyleSheet.create({
   },
   trackTitle: {
     fontSize: fontSize.md,
-    fontWeight: fontWeight.bold,
+    fontFamily: fontFamily.semibold,
     color: colors.textPrimary,
   },
   trackArtist: {
     fontSize: fontSize.sm,
+    fontFamily: fontFamily.regular,
     color: colors.textSecondary,
     marginTop: 2,
   },
@@ -223,16 +236,10 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     paddingHorizontal: 16,
   },
-  actionIcon: {
-    fontSize: 18,
-    color: colors.textPrimary,
-    width: 24,
-    textAlign: 'center',
-  },
   actionText: {
     fontSize: fontSize.md,
+    fontFamily: fontFamily.medium,
     color: colors.textPrimary,
-    fontWeight: fontWeight.medium,
   },
   actionSubtext: {
     fontSize: fontSize.xs,
@@ -262,7 +269,7 @@ const styles = StyleSheet.create({
   },
   createBtnText: {
     fontSize: fontSize.sm,
-    fontWeight: fontWeight.semibold,
+    fontFamily: fontFamily.semibold,
     color: colors.white,
   },
   cancelBtn: {
@@ -275,7 +282,7 @@ const styles = StyleSheet.create({
   },
   cancelText: {
     fontSize: fontSize.md,
-    fontWeight: fontWeight.semibold,
+    fontFamily: fontFamily.semibold,
     color: colors.textPrimary,
   },
 });
