@@ -15,6 +15,7 @@ import {
   ShuffleIcon, RepeatIcon, RepeatOneIcon, QueueIcon,
   MusicNoteIcon, LyricsIcon,
 } from './Icons';
+import AppleMusicEmbed from './AppleMusicEmbed';
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const ARTWORK_SIZE = Math.min(SCREEN_WIDTH - 48, SCREEN_HEIGHT * 0.38);
@@ -28,7 +29,7 @@ export default function FullPlayer() {
   } = usePlayerStore();
   const { isFavorite, addFavorite, removeFavorite, addToRecentlyPlayed } = useLibraryStore();
 
-  const [view, setView] = useState<'highlight' | 'lyrics'>('highlight');
+  const [view, setView] = useState<'highlight' | 'lyrics' | 'fullSong'>('highlight');
   const [lyrics, setLyrics] = useState<LyricLine[]>([]);
   const [lyricsLoading, setLyricsLoading] = useState(false);
 
@@ -127,11 +128,11 @@ export default function FullPlayer() {
           </TouchableOpacity>
 
           <View style={styles.tabBar}>
-            {(['highlight', 'lyrics'] as const).map(v => (
+            {(['highlight', 'lyrics', 'fullSong'] as const).map(v => (
               <TouchableOpacity key={v} style={[styles.tab, view === v && styles.tabActive]}
                 onPress={() => setView(v)} activeOpacity={0.7}>
                 <Text style={[styles.tabText, view === v && styles.tabTextActive]}>
-                  {v === 'highlight' ? 'Highlight' : 'Lyrics'}
+                  {v === 'highlight' ? 'Highlight' : v === 'lyrics' ? 'Lyrics' : 'Full Song'}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -268,6 +269,16 @@ export default function FullPlayer() {
                   <Text style={styles.lyricsPlaceholder}>No lyrics available for this track</Text>
                 </View>
               )}
+            </View>
+          )}
+
+          {view === 'fullSong' && (
+            <View style={styles.embedContainer}>
+              <AppleMusicEmbed
+                embedUrl={currentTrack.appleMusicEmbedUrl || ''}
+                trackTitle={currentTrack.title}
+                artistName={currentTrack.artist}
+              />
             </View>
           )}
         </View>
@@ -582,5 +593,11 @@ const styles = StyleSheet.create({
     color: colors.textTertiary,
     textAlign: 'center',
     letterSpacing: 0.2,
+  },
+
+  // Embed (Full Song)
+  embedContainer: {
+    flex: 1,
+    width: '100%',
   },
 });
