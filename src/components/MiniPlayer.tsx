@@ -1,11 +1,21 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Text, TouchableOpacity, Image, StyleSheet, Pressable, Animated, Easing } from 'react-native';
+import AnimatedReanimated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withRepeat,
+  withSequence,
+  withTiming,
+  cancelAnimation,
+  Easing as REasing,
+} from 'react-native-reanimated';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { borderRadius, fontSize, fontFamily, layout } from '../constants/theme';
 import { usePlayerStore } from '../store/playerStore';
 import { useLibraryStore } from '../store/libraryStore';
 import { useTheme } from '../hooks/useTheme';
 import { HeartIcon, PauseIcon, PlayIcon, SkipForwardIcon } from './Icons';
+import AnimatedHeart from './AnimatedHeart';
 
 export default function MiniPlayer() {
   const insets = useSafeAreaInsets();
@@ -13,6 +23,32 @@ export default function MiniPlayer() {
   const { currentTrack, isPlaying, progress, duration, isLoading, togglePlay, next, toggleFullPlayer } = usePlayerStore();
   const { isFavorite, addFavorite, removeFavorite } = useLibraryStore();
 
+  // Breathing animation for artwork
+  const breatheScale = useSharedValue(1);
+  const prevPlaying = useRef(isPlaying);
+
+  useEffect(() => {
+    if (isPlaying && !prevPlaying.current) {
+      breatheScale.value = withRepeat(
+        withSequence(
+          withTiming(1.04, { duration: 1500, easing: REasing.inOut(REasing.ease) }),
+          withTiming(1, { duration: 1500, easing: REasing.inOut(REasing.ease) }),
+        ),
+        -1,
+        false
+      );
+    } else if (!isPlaying && prevPlaying.current) {
+      cancelAnimation(breatheScale);
+      breatheScale.value = withTiming(1, { duration: 300 });
+    }
+    prevPlaying.current = isPlaying;
+  }, [isPlaying]);
+
+  const breatheStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: breatheScale.value }],
+  }));
+
+  // Loading spinner
   const spinAnim = useRef(new Animated.Value(0)).current;
   useEffect(() => {
     if (isLoading) {
@@ -40,9 +76,10 @@ export default function MiniPlayer() {
       </View>
 
       <View style={s.content}>
-        <View style={[s.artworkWrap, isPlaying && { borderColor: colors.accent }]}>
+        {/* Artwork with breathing animation */}
+        <AnimatedReanimated.View style={[s.artworkWrap, isPlaying && { borderColor: colors.accent }, breatheStyle]}>
           <Image source={{ uri: currentTrack.artwork }} style={s.artworkImage} />
-        </View>
+        </AnimatedReanimated.View>
 
         <View style={s.trackInfo}>
           <Text style={[s.title, { color: colors.textPrimary }]} numberOfLines={1}>{currentTrack.title}</Text>
@@ -56,11 +93,13 @@ export default function MiniPlayer() {
             </Animated.View>
           </View>
         ) : (
-          <TouchableOpacity style={s.iconBtn}
-            onPress={(e) => { e.stopPropagation(); isLiked ? removeFavorite(currentTrack.id) : addFavorite(currentTrack); }}
-            activeOpacity={0.7}>
-            <HeartIcon size={18} color={isLiked ? colors.accentPink : colors.textTertiary} filled={isLiked} />
-          </TouchableOpacity>
+          <AnimatedHeart
+            liked={isLiked}
+            size={18}
+            activeColor={colors.accentPink}
+            inactiveColor={colors.textTertiary}
+            onPress={() => isLiked ? removeFavorite(currentTrack.id) : addFavorite(currentTrack)}
+          />
         )}
 
         <TouchableOpacity style={[s.playBtn, { backgroundColor: colors.white }]} onPress={(e) => { e.stopPropagation(); togglePlay(); }} activeOpacity={0.8}>

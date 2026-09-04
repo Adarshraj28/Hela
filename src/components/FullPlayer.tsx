@@ -12,11 +12,12 @@ import { getTrackLyrics, LyricLine, searchYouTubeId, getYouTubeWatchUrl } from '
 import * as WebBrowser from 'expo-web-browser';
 import { useTheme } from '../hooks/useTheme';
 import {
-  ChevronDownIcon, MoreHorizontalIcon, HeartIcon, ShareIcon,
+  ChevronDownIcon, MoreHorizontalIcon, ShareIcon,
   PlayIcon, PauseIcon, SkipBackIcon, SkipForwardIcon,
   ShuffleIcon, RepeatIcon, RepeatOneIcon, QueueIcon,
   MusicNoteIcon, LyricsIcon,
 } from './Icons';
+import AnimatedHeart from './AnimatedHeart';
 
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
@@ -201,10 +202,13 @@ export default function FullPlayer() {
 
               {/* Secondary */}
               <View style={st.secondaryActions}>
-                <TouchableOpacity style={st.secondaryBtn}
-                  onPress={() => isLiked ? removeFavorite(currentTrack.id) : addFavorite(currentTrack)} activeOpacity={0.7}>
-                  <HeartIcon size={22} color={isLiked ? colors.accentPink : colors.textTertiary} filled={isLiked} />
-                </TouchableOpacity>
+                <AnimatedHeart
+                  liked={isLiked}
+                  size={22}
+                  activeColor={colors.accentPink}
+                  inactiveColor={colors.textTertiary}
+                  onPress={() => isLiked ? removeFavorite(currentTrack.id) : addFavorite(currentTrack)}
+                />
                 <TouchableOpacity style={st.secondaryBtn} activeOpacity={0.7}>
                   <ShareIcon size={22} color={colors.textTertiary} />
                 </TouchableOpacity>

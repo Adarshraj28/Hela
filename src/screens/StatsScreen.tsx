@@ -1,10 +1,19 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useEffect, useRef } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Image, StyleSheet } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { borderRadius, fontSize, fontFamily, layout } from '../constants/theme';
 import { useTheme } from '../hooks/useTheme';
 import { useLibraryStore } from '../store/libraryStore';
 import { ArrowLeftIcon } from '../components/Icons';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  withDelay,
+  withSpring,
+  Easing,
+  interpolate,
+} from 'react-native-reanimated';
 
 export default function StatsScreen({ navigation }: { navigation: any }) {
   const insets = useSafeAreaInsets();
@@ -52,6 +61,37 @@ export default function StatsScreen({ navigation }: { navigation: any }) {
     return { topArtists, topGenres, totalSongs, uniqueArtists, uniqueAlbums, topTrack };
   }, [recentlyPlayed]);
 
+  // Animated values for staggered entrance
+  const heroOpacity = useSharedValue(0);
+  const heroTranslateY = useSharedValue(30);
+  const statsOpacity = useSharedValue(0);
+  const statsTranslateY = useSharedValue(20);
+  const topTrackOpacity = useSharedValue(0);
+  const artistsOpacity = useSharedValue(0);
+  const genresOpacity = useSharedValue(0);
+
+  useEffect(() => {
+    heroOpacity.value = withDelay(100, withTiming(1, { duration: 500, easing: Easing.out(Easing.cubic) }));
+    heroTranslateY.value = withDelay(100, withTiming(0, { duration: 500, easing: Easing.out(Easing.cubic) }));
+    statsOpacity.value = withDelay(250, withTiming(1, { duration: 500, easing: Easing.out(Easing.cubic) }));
+    statsTranslateY.value = withDelay(250, withTiming(0, { duration: 500, easing: Easing.out(Easing.cubic) }));
+    topTrackOpacity.value = withDelay(400, withTiming(1, { duration: 500 }));
+    artistsOpacity.value = withDelay(550, withTiming(1, { duration: 500 }));
+    genresOpacity.value = withDelay(700, withTiming(1, { duration: 500 }));
+  }, []);
+
+  const heroStyle = useAnimatedStyle(() => ({
+    opacity: heroOpacity.value,
+    transform: [{ translateY: heroTranslateY.value }],
+  }));
+  const statsStyle = useAnimatedStyle(() => ({
+    opacity: statsOpacity.value,
+    transform: [{ translateY: statsTranslateY.value }],
+  }));
+  const topTrackStyle = useAnimatedStyle(() => ({ opacity: topTrackOpacity.value }));
+  const artistsStyle = useAnimatedStyle(() => ({ opacity: artistsOpacity.value }));
+  const genresStyle = useAnimatedStyle(() => ({ opacity: genresOpacity.value }));
+
   return (
     <ScrollView style={[s.container, { backgroundColor: colors.bgBase }]}
       contentContainerStyle={{ paddingTop: insets.top + 16, paddingBottom: 100 }}
@@ -64,14 +104,14 @@ export default function StatsScreen({ navigation }: { navigation: any }) {
       </TouchableOpacity>
 
       {/* Hero */}
-      <View style={[s.hero, { backgroundColor: 'rgba(139, 92, 246, 0.12)' }]}>
+      <Animated.View style={[s.hero, { backgroundColor: 'rgba(139, 92, 246, 0.12)' }, heroStyle]}>
         <Text style={s.heroEmoji}>🎵</Text>
         <Text style={[s.heroTitle, { color: colors.textPrimary }]}>Your Listening Stats</Text>
         <Text style={[s.heroSubtitle, { color: colors.textSecondary }]}>A look at your music journey</Text>
-      </View>
+      </Animated.View>
 
       {/* Big Numbers */}
-      <View style={s.statsGrid}>
+      <Animated.View style={[s.statsGrid, statsStyle]}>
         <View style={[s.statCard, { backgroundColor: colors.cardBg, borderColor: colors.borderSubtle }]}>
           <Text style={[s.statBig, { color: colors.accent }]}>{stats.totalSongs}</Text>
           <Text style={[s.statLabel, { color: colors.textTertiary }]}>Songs Played</Text>
@@ -88,11 +128,11 @@ export default function StatsScreen({ navigation }: { navigation: any }) {
           <Text style={[s.statBig, { color: colors.accent }]}>{favorites.length}</Text>
           <Text style={[s.statLabel, { color: colors.textTertiary }]}>Liked</Text>
         </View>
-      </View>
+      </Animated.View>
 
       {/* Most Played */}
       {stats.topTrack && (
-        <View style={s.section}>
+        <Animated.View style={[s.section, topTrackStyle]}>
           <Text style={[s.sectionTitle, { color: colors.textPrimary }]}>Most Played</Text>
           <View style={[s.topTrackCard, { backgroundColor: colors.cardBg, borderColor: colors.borderSubtle }]}>
             <Image source={{ uri: stats.topTrack.track.artwork }} style={s.topTrackArt} />
@@ -102,12 +142,12 @@ export default function StatsScreen({ navigation }: { navigation: any }) {
               <Text style={[s.topTrackCount, { color: colors.accent }]}>{stats.topTrack.count}x played</Text>
             </View>
           </View>
-        </View>
+        </Animated.View>
       )}
 
       {/* Top Artists */}
       {stats.topArtists.length > 0 && (
-        <View style={s.section}>
+        <Animated.View style={[s.section, artistsStyle]}>
           <Text style={[s.sectionTitle, { color: colors.textPrimary }]}>Top Artists</Text>
           {stats.topArtists.map((artist, i) => (
             <View key={artist.name} style={[s.rankRow, { borderBottomColor: colors.borderSubtle }]}>
@@ -119,12 +159,12 @@ export default function StatsScreen({ navigation }: { navigation: any }) {
               </View>
             </View>
           ))}
-        </View>
+        </Animated.View>
       )}
 
       {/* Top Genres */}
       {stats.topGenres.length > 0 && (
-        <View style={s.section}>
+        <Animated.View style={[s.section, genresStyle]}>
           <Text style={[s.sectionTitle, { color: colors.textPrimary }]}>Top Genres</Text>
           {stats.topGenres.map(([genre, count], i) => (
             <View key={genre} style={s.genreRow}>
@@ -134,7 +174,7 @@ export default function StatsScreen({ navigation }: { navigation: any }) {
               <Text style={[s.genreCount, { color: colors.textTertiary }]}>{count}</Text>
             </View>
           ))}
-        </View>
+        </Animated.View>
       )}
 
       {stats.totalSongs === 0 && (
