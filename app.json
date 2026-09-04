@@ -30,8 +30,7 @@
       "versionCode": 1
     },
     "plugins": [
-      "expo-font",
-      "expo-audio"
+      "expo-font"
     ]
   }
 }

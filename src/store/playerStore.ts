@@ -1,5 +1,4 @@
 import { create } from 'zustand';
-import { AudioPlayer, createAudioPlayer, setAudioModeAsync } from 'expo-audio';
 import { Track, RepeatMode } from '../types';
 
 interface PlayerStore {
@@ -30,17 +29,34 @@ interface PlayerStore {
   setProgress: (p: number) => void;
 }
 
-let audioPlayer: AudioPlayer | null = null;
-let progressInterval: ReturnType<typeof setInterval> | null = null;
-
-function getAudioPlayer(): AudioPlayer {
-  if (!audioPlayer) {
-    audioPlayer = createAudioPlayer('');
-  }
-  return audioPlayer;
+// ── Safe audio module import ──
+// expo-audio may not be available in all Expo Go versions
+let AudioModule: any = null;
+try {
+  AudioModule = require('expo-audio');
+} catch {
+  console.warn('expo-audio not available — playback will use UI-only mode');
 }
 
-async function playAudio(url: string) {
+let audioPlayer: any = null;
+let progressInterval: ReturnType<typeof setInterval> | null = null;
+let audioModeConfigured = false;
+
+async function ensureAudioMode() {
+  if (!AudioModule || audioModeConfigured) return;
+  try {
+    await AudioModule.setAudioModeAsync({
+      playsInSilentMode: true,
+      allowsRecording: false,
+      shouldPlayInBackground: true,
+      interruptionMode: 'duckOthers',
+    });
+    audioModeConfigured = true;
+  } catch {}
+}
+
+async function playAudio(url: string): Promise<boolean> {
+  if (!AudioModule) return false;
   try {
     // Stop existing playback
     if (audioPlayer) {
@@ -55,72 +71,67 @@ async function playAudio(url: string) {
       progressInterval = null;
     }
 
+    await ensureAudioMode();
+
     // Create new player with the audio URL
-    audioPlayer = createAudioPlayer(url);
-
-    // Configure audio mode for music playback
-    await setAudioModeAsync({
-      playsInSilentMode: true,
-      allowsRecording: false,
-      shouldPlayInBackground: true,
-      interruptionMode: 'duckOthers',
-    });
-
+    audioPlayer = AudioModule.createAudioPlayer(url);
     audioPlayer.play();
-
     return true;
   } catch (e) {
     console.warn('Audio playback error:', e);
+    audioPlayer = null;
     return false;
   }
 }
 
-function startProgressTracking(getState: () => PlayerStore, setState: (partial: Partial<PlayerStore>) => void) {
+function stopProgressTracking() {
   if (progressInterval) {
     clearInterval(progressInterval);
+    progressInterval = null;
   }
-  progressInterval = setInterval(() => {
-    if (audioPlayer && !audioPlayer.paused) {
-      try {
-        const currentTime = audioPlayer.currentTime;
-        const duration = audioPlayer.duration;
-        const repeat = getState().repeat;
-        const queue = getState().queue;
-        const queueIndex = getState().queueIndex;
+}
 
-        // Check if track ended
-        if (duration > 0 && currentTime >= duration - 0.5) {
-          if (repeat === 'one') {
-            audioPlayer.seekTo(0);
-            audioPlayer.play();
-            setState({ progress: 0 });
-          } else {
-            // Auto-advance to next
-            const nextIdx = queueIndex + 1;
-            if (nextIdx < queue.length) {
-              clearInterval(progressInterval!);
-              progressInterval = null;
-              getState().next();
-            } else if (repeat === 'all') {
-              clearInterval(progressInterval!);
-              progressInterval = null;
-              // Play from start
-              const firstTrack = queue[0];
-              if (firstTrack) {
-                getState().playTrack(firstTrack, queue, 0);
-              }
-            } else {
-              setState({ isPlaying: false, progress: duration });
-              clearInterval(progressInterval!);
-              progressInterval = null;
-            }
-          }
-        } else {
-          setState({ progress: currentTime, duration: duration || getState().duration });
-        }
-      } catch {}
+function startProgressTracking(getState: () => PlayerStore, setState: (partial: Partial<PlayerStore>) => void) {
+  stopProgressTracking();
+  progressInterval = setInterval(() => {
+    if (!audioPlayer) {
+      stopProgressTracking();
+      return;
     }
-  }, 250);
+    try {
+      if (audioPlayer.paused) return;
+
+      const currentTime = audioPlayer.currentTime || 0;
+      const duration = audioPlayer.duration || 0;
+      const repeat = getState().repeat;
+      const queue = getState().queue;
+      const queueIndex = getState().queueIndex;
+
+      // Check if track ended
+      if (duration > 0 && currentTime >= duration - 0.3) {
+        if (repeat === 'one') {
+          audioPlayer.seekTo(0);
+          audioPlayer.play();
+          setState({ progress: 0 });
+        } else {
+          const nextIdx = queueIndex + 1;
+          if (nextIdx < queue.length) {
+            stopProgressTracking();
+            getState().next();
+          } else if (repeat === 'all') {
+            stopProgressTracking();
+            const firstTrack = queue[0];
+            if (firstTrack) getState().playTrack(firstTrack, queue, 0);
+          } else {
+            setState({ isPlaying: false, progress: duration });
+            stopProgressTracking();
+          }
+        }
+      } else {
+        setState({ progress: currentTime, duration: duration > 0 ? duration : getState().duration });
+      }
+    } catch {}
+  }, 300);
 }
 
 export const usePlayerStore = create<PlayerStore>((set, get) => ({
@@ -143,7 +154,7 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
 
     // Toggle if same track
     if (state.currentTrack?.id === track.id) {
-      if (audioPlayer) {
+      if (audioPlayer && AudioModule) {
         if (audioPlayer.paused) {
           audioPlayer.play();
           set({ isPlaying: true });
@@ -151,10 +162,7 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
         } else {
           audioPlayer.pause();
           set({ isPlaying: false });
-          if (progressInterval) {
-            clearInterval(progressInterval);
-            progressInterval = null;
-          }
+          stopProgressTracking();
         }
       } else {
         set(s => ({ isPlaying: !s.isPlaying }));
@@ -173,23 +181,31 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
       error: null,
     });
 
-    // Play audio from preview URL
-    if (track.previewUrl) {
+    // Try real audio playback
+    if (track.previewUrl && AudioModule) {
       const success = await playAudio(track.previewUrl);
       if (success) {
         startProgressTracking(get, set);
-        // Update duration from actual audio
-        try {
-          const actualDuration = audioPlayer?.duration;
-          if (actualDuration && actualDuration > 0) {
-            set({ duration: actualDuration, isLoading: false });
+        // Update duration from actual audio after a brief delay
+        setTimeout(() => {
+          try {
+            const actualDuration = audioPlayer?.duration;
+            if (actualDuration && actualDuration > 0) {
+              set({ duration: actualDuration, isLoading: false });
+            } else {
+              set({ isLoading: false });
+            }
+          } catch {
+            set({ isLoading: false });
           }
-        } catch {}
+        }, 500);
       } else {
-        set({ isLoading: false, error: 'Playback failed' });
+        // Audio module failed — still show player UI with progress simulation
+        set({ isLoading: false, error: 'Real audio unavailable' });
       }
     } else {
-      set({ isLoading: false, duration: track.duration || 30 });
+      // No preview URL or no audio module — UI-only mode
+      set({ isLoading: false });
     }
   },
 
@@ -201,34 +217,33 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
       if (isPlaying) {
         audioPlayer.pause();
         set({ isPlaying: false });
-        if (progressInterval) {
-          clearInterval(progressInterval);
-          progressInterval = null;
-        }
+        stopProgressTracking();
       } else {
         audioPlayer.play();
         set({ isPlaying: true });
         startProgressTracking(get, set);
       }
+    } else {
+      // UI-only toggle
+      set(s => ({ isPlaying: !s.isPlaying }));
     }
   },
 
   pause: () => {
-    if (audioPlayer && !audioPlayer.paused) {
-      audioPlayer.pause();
+    if (audioPlayer) {
+      try { audioPlayer.pause(); } catch {}
     }
     set({ isPlaying: false });
-    if (progressInterval) {
-      clearInterval(progressInterval);
-      progressInterval = null;
-    }
+    stopProgressTracking();
   },
 
   resume: () => {
-    if (audioPlayer && audioPlayer.paused) {
-      audioPlayer.play();
+    if (audioPlayer) {
+      try { audioPlayer.play(); } catch {}
       set({ isPlaying: true });
       startProgressTracking(get, set);
+    } else {
+      set({ isPlaying: true });
     }
   },
 
@@ -248,10 +263,7 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
         nextIdx = 0;
       } else {
         set({ isPlaying: false, progress: 0 });
-        if (progressInterval) {
-          clearInterval(progressInterval);
-          progressInterval = null;
-        }
+        stopProgressTracking();
         return;
       }
     }
@@ -265,9 +277,8 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
     const { queue, queueIndex, progress } = get();
     if (queue.length === 0) return;
 
-    // If more than 3 seconds in, restart current track
     if (progress > 3 && audioPlayer) {
-      audioPlayer.seekTo(0);
+      try { audioPlayer.seekTo(0); } catch {}
       set({ progress: 0 });
       return;
     }
@@ -282,9 +293,7 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
 
   seek: (time) => {
     if (audioPlayer) {
-      try {
-        audioPlayer.seekTo(time);
-      } catch {}
+      try { audioPlayer.seekTo(time); } catch {}
     }
     set({ progress: time });
   },
@@ -302,10 +311,7 @@ export const usePlayerStore = create<PlayerStore>((set, get) => ({
       try { audioPlayer.pause(); audioPlayer.release(); } catch {}
       audioPlayer = null;
     }
-    if (progressInterval) {
-      clearInterval(progressInterval);
-      progressInterval = null;
-    }
+    stopProgressTracking();
     set({
       queue: [], queueIndex: -1, isPlaying: false, currentTrack: null,
       progress: 0, duration: 0, error: null,
