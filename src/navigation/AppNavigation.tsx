@@ -1,10 +1,11 @@
 import React from 'react';
-import { View, Text, StyleSheet, Platform } from 'react-native';
+import { View, Text, StyleSheet } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors, fontSize, fontWeight } from '../constants/theme';
+import { fontSize } from '../constants/theme';
+import { useTheme } from '../hooks/useTheme';
 import { HomeIcon, SearchIcon, LibraryIcon, SettingsIcon } from '../components/Icons';
 
 // Screens
@@ -19,16 +20,17 @@ import PlaylistScreen from '../screens/PlaylistScreen';
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
 
-const TAB_ICONS: Record<string, React.FC<{ focused: boolean }>> = {
-  HomeTab: ({ focused }) => <HomeIcon size={22} color={focused ? colors.white : colors.textTertiary} />,
-  SearchTab: ({ focused }) => <SearchIcon size={22} color={focused ? colors.white : colors.textTertiary} />,
-  LibraryTab: ({ focused }) => <LibraryIcon size={22} color={focused ? colors.white : colors.textTertiary} />,
-  SettingsTab: ({ focused }) => <SettingsIcon size={22} color={focused ? colors.white : colors.textTertiary} />,
-};
-
 function TabNavigator() {
   const insets = useSafeAreaInsets();
+  const colors = useTheme();
   const bottomPad = Math.max(insets.bottom - 4, 0);
+
+  const TAB_ICONS: Record<string, React.FC<{ focused: boolean }>> = {
+    HomeTab: ({ focused }) => <HomeIcon size={22} color={focused ? colors.white : colors.textTertiary} />,
+    SearchTab: ({ focused }) => <SearchIcon size={22} color={focused ? colors.white : colors.textTertiary} />,
+    LibraryTab: ({ focused }) => <LibraryIcon size={22} color={focused ? colors.white : colors.textTertiary} />,
+    SettingsTab: ({ focused }) => <SettingsIcon size={22} color={focused ? colors.white : colors.textTertiary} />,
+  };
 
   return (
     <Tab.Navigator
@@ -39,8 +41,8 @@ function TabNavigator() {
           return Icon ? <Icon focused={focused} /> : null;
         },
         tabBarStyle: {
-          backgroundColor: 'rgba(8, 8, 16, 0.97)',
-          borderTopColor: 'rgba(255,255,255,0.04)',
+          backgroundColor: colors.tabBarBg,
+          borderTopColor: colors.tabBarBorder,
           borderTopWidth: 1,
           height: 60 + bottomPad,
           paddingBottom: bottomPad + 6,

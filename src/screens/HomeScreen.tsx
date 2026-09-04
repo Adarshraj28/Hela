@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Image, StyleSheet, RefreshControl, Animated, Easing } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Image, StyleSheet, RefreshControl } from 'react-native';
 import { useNavigation } from '@react-navigation/native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors, spacing, borderRadius, fontSize, fontWeight, fontFamily, layout } from '../constants/theme';
+import { borderRadius, fontSize, fontFamily, layout } from '../constants/theme';
 import { usePlayerStore } from '../store/playerStore';
 import { useLibraryStore } from '../store/libraryStore';
+import { useTheme } from '../hooks/useTheme';
 import { getGreeting } from '../utils/formatTime';
 import * as api from '../services/musicApi';
 import { Track, Artist, Album } from '../types';
@@ -14,17 +15,10 @@ import { BellIcon } from '../components/Icons';
 const CARD_SIZE = 160;
 const ARTIST_SIZE = 76;
 
-function HorizontalScroll({ children, contentContainerStyle }: { children: React.ReactNode; contentContainerStyle?: any }) {
-  return (
-    <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={contentContainerStyle}>
-      {children}
-    </ScrollView>
-  );
-}
-
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
+  const colors = useTheme();
   const { playTrack } = usePlayerStore();
   const { recentlyPlayed, favorites } = useLibraryStore();
   const [trending, setTrending] = useState<Track[]>([]);
@@ -57,117 +51,117 @@ export default function HomeScreen() {
 
   return (
     <ScrollView
-      style={styles.container}
+      style={[st.container, { backgroundColor: colors.bgBase }]}
       contentContainerStyle={{ paddingTop: insets.top + 12, paddingBottom: 120 }}
       showsVerticalScrollIndicator={false}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.accent} />}
     >
       {/* Welcome Header */}
-      <View style={styles.header}>
-        <View style={styles.headerLeft}>
-          <Text style={styles.greeting}>{greeting}</Text>
-          <Text style={styles.subtitle}>Wanna feel spirit today ?</Text>
+      <View style={st.header}>
+        <View style={st.headerLeft}>
+          <Text style={[st.greeting, { color: colors.textPrimary }]}>{greeting}</Text>
+          <Text style={[st.subtitle, { color: colors.textSecondary }]}>Wanna feel spirit today ?</Text>
         </View>
-        <View style={styles.headerActions}>
-          <TouchableOpacity style={styles.iconBtn} activeOpacity={0.7}>
+        <View style={st.headerActions}>
+          <TouchableOpacity style={[st.iconBtn, { backgroundColor: colors.controlBg }]} activeOpacity={0.7}>
             <BellIcon size={20} color={colors.textSecondary} />
-            <View style={styles.notifDot} />
+            <View style={[st.notifDot, { backgroundColor: colors.accentPink, borderColor: colors.bgBase }]} />
           </TouchableOpacity>
-          <TouchableOpacity style={styles.avatarBtn} activeOpacity={0.7}
+          <TouchableOpacity style={st.avatarBtn} activeOpacity={0.7}
             onPress={() => navigation.navigate('SettingsTab')}>
-            <View style={styles.avatar}>
-              <Text style={styles.avatarText}>H</Text>
+            <View style={[st.avatar, { backgroundColor: colors.accent, borderColor: 'rgba(139,92,246,0.3)' }]}>
+              <Text style={[st.avatarText, { color: colors.white }]}>H</Text>
             </View>
           </TouchableOpacity>
         </View>
       </View>
 
       {/* Artist Recommendation */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Artist Recommendation</Text>
-        <HorizontalScroll contentContainerStyle={{ paddingLeft: layout.screenPadding, gap: 18 }}>
+      <View style={st.section}>
+        <Text style={[st.sectionTitle, { color: colors.textPrimary }]}>Artist Recommendation</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingLeft: layout.screenPadding, gap: 18 }}>
           {loading ? [1,2,3,4].map(i => (
             <View key={i} style={{ alignItems: 'center' }}>
-              <View style={[styles.artistCircle, styles.skeleton]} />
-              <View style={[styles.skeletonText, styles.skeleton]} />
+              <View style={[st.artistCircle, { backgroundColor: colors.skeletonBg }]} />
+              <View style={[st.skeletonText, { backgroundColor: colors.skeletonBg }]} />
             </View>
           )) : artists.map(artist => (
-            <TouchableOpacity key={artist.id} style={styles.artistItem} activeOpacity={0.7}
+            <TouchableOpacity key={artist.id} style={st.artistItem} activeOpacity={0.7}
               onPress={() => navigation.navigate('Artist', { id: artist.id })}>
-              <View style={styles.artistCircle}>
-                <Image source={{ uri: artist.artwork }} style={styles.artistImage} />
+              <View style={[st.artistCircle, { borderColor: 'rgba(255,255,255,0.05)' }]}>
+                <Image source={{ uri: artist.artwork }} style={st.artistImage} />
               </View>
-              <Text style={styles.artistName} numberOfLines={1}>{artist.name}</Text>
+              <Text style={[st.artistName, { color: colors.textPrimary }]} numberOfLines={1}>{artist.name}</Text>
             </TouchableOpacity>
           ))}
-        </HorizontalScroll>
+        </ScrollView>
       </View>
 
       {/* Recently Played */}
       {recentlyPlayed.length > 0 && (
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Recently Played</Text>
+        <View style={st.section}>
+          <View style={st.sectionHeader}>
+            <Text style={[st.sectionTitle, { color: colors.textPrimary }]}>Recently Played</Text>
             <TouchableOpacity onPress={() => navigation.navigate('LibraryTab')} activeOpacity={0.7}>
-              <Text style={styles.seeMore}>See More</Text>
+              <Text style={[st.seeMore, { color: colors.textSecondary }]}>See More</Text>
             </TouchableOpacity>
           </View>
-          <HorizontalScroll contentContainerStyle={{ paddingLeft: layout.screenPadding, gap: 12 }}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingLeft: layout.screenPadding, gap: 12 }}>
             {recentlyPlayed.slice(0, 8).map((entry, i) => (
-              <TouchableOpacity key={`${entry.track.id}-${i}`} style={styles.cardItem} activeOpacity={0.8}
+              <TouchableOpacity key={`${entry.track.id}-${i}`} style={st.cardItem} activeOpacity={0.8}
                 onPress={() => playTrack(entry.track, recentlyPlayed.map(e => e.track))}>
-                <Image source={{ uri: entry.track.artwork }} style={styles.cardImage} />
-                <Text style={styles.cardTitle} numberOfLines={1}>{entry.track.title}</Text>
-                <Text style={styles.cardSubtitle} numberOfLines={1}>{entry.track.artist}</Text>
+                <Image source={{ uri: entry.track.artwork }} style={[st.cardImage, { borderRadius: borderRadius.md }]} />
+                <Text style={[st.cardTitle, { color: colors.textPrimary }]} numberOfLines={1}>{entry.track.title}</Text>
+                <Text style={[st.cardSubtitle, { color: colors.textSecondary }]} numberOfLines={1}>{entry.track.artist}</Text>
               </TouchableOpacity>
             ))}
-          </HorizontalScroll>
+          </ScrollView>
         </View>
       )}
 
       {/* Favorites */}
       {favorites.length > 0 && (
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Your Favorites</Text>
+        <View style={st.section}>
+          <View style={st.sectionHeader}>
+            <Text style={[st.sectionTitle, { color: colors.textPrimary }]}>Your Favorites</Text>
             <TouchableOpacity onPress={() => navigation.navigate('LibraryTab')} activeOpacity={0.7}>
-              <Text style={styles.seeMore}>See More</Text>
+              <Text style={[st.seeMore, { color: colors.textSecondary }]}>See More</Text>
             </TouchableOpacity>
           </View>
-          <HorizontalScroll contentContainerStyle={{ paddingLeft: layout.screenPadding, gap: 12 }}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingLeft: layout.screenPadding, gap: 12 }}>
             {favorites.slice(0, 8).map(track => (
-              <TouchableOpacity key={track.id} style={styles.cardItem} activeOpacity={0.8}
+              <TouchableOpacity key={track.id} style={st.cardItem} activeOpacity={0.8}
                 onPress={() => playTrack(track, favorites, favorites.indexOf(track))}>
-                <Image source={{ uri: track.artwork }} style={styles.cardImage} />
-                <Text style={styles.cardTitle} numberOfLines={1}>{track.title}</Text>
-                <Text style={styles.cardSubtitle} numberOfLines={1}>{track.artist}</Text>
+                <Image source={{ uri: track.artwork }} style={[st.cardImage, { borderRadius: borderRadius.md }]} />
+                <Text style={[st.cardTitle, { color: colors.textPrimary }]} numberOfLines={1}>{track.title}</Text>
+                <Text style={[st.cardSubtitle, { color: colors.textSecondary }]} numberOfLines={1}>{track.artist}</Text>
               </TouchableOpacity>
             ))}
-          </HorizontalScroll>
+          </ScrollView>
         </View>
       )}
 
       {/* Trending Now */}
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Trending Now</Text>
+      <View style={st.section}>
+        <Text style={[st.sectionTitle, { color: colors.textPrimary }]}>Trending Now</Text>
         <View style={{ paddingHorizontal: layout.screenPadding }}>
           {loading ? [1,2,3,4,5].map(i => (
-            <View key={i} style={styles.songRow}>
-              <View style={[styles.songArt, styles.skeleton]} />
+            <View key={i} style={st.songRow}>
+              <View style={[st.songArt, { backgroundColor: colors.skeletonBg, borderRadius: borderRadius.sm }]} />
               <View style={{ flex: 1 }}>
-                <View style={[styles.skeletonTitle, styles.skeleton]} />
-                <View style={[styles.skeletonSub, styles.skeleton]} />
+                <View style={[st.skeletonTitle, { backgroundColor: colors.skeletonBg }]} />
+                <View style={[st.skeletonSub, { backgroundColor: colors.skeletonBg }]} />
               </View>
             </View>
           )) : trending.slice(0, 10).map((track, i) => (
-            <TouchableOpacity key={track.id} style={styles.songRow} activeOpacity={0.7}
+            <TouchableOpacity key={track.id} style={st.songRow} activeOpacity={0.7}
               onPress={() => playTrack(trending[i], trending, i)}
               onLongPress={() => { setActionTrack(track); setShowActionSheet(true); }}>
-              <Text style={styles.songIndex}>{i + 1}</Text>
-              <Image source={{ uri: track.artwork }} style={styles.songArt} />
-              <View style={styles.songInfo}>
-                <Text style={styles.songTitle} numberOfLines={1}>{track.title}</Text>
-                <Text style={styles.songArtist} numberOfLines={1}>{track.artist}</Text>
+              <Text style={[st.songIndex, { color: colors.textMuted }]}>{i + 1}</Text>
+              <Image source={{ uri: track.artwork }} style={[st.songArt, { borderRadius: borderRadius.sm }]} />
+              <View style={st.songInfo}>
+                <Text style={[st.songTitle, { color: colors.textPrimary }]} numberOfLines={1}>{track.title}</Text>
+                <Text style={[st.songArtist, { color: colors.textSecondary }]} numberOfLines={1}>{track.artist}</Text>
               </View>
             </TouchableOpacity>
           ))}
@@ -176,18 +170,18 @@ export default function HomeScreen() {
 
       {/* New Releases */}
       {albums.length > 0 && (
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>New Releases</Text>
-          <HorizontalScroll contentContainerStyle={{ paddingLeft: layout.screenPadding, gap: 14 }}>
+        <View style={st.section}>
+          <Text style={[st.sectionTitle, { color: colors.textPrimary }]}>New Releases</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingLeft: layout.screenPadding, gap: 14 }}>
             {albums.slice(0, 10).map(album => (
-              <TouchableOpacity key={album.id} style={styles.cardItem} activeOpacity={0.8}
+              <TouchableOpacity key={album.id} style={st.cardItem} activeOpacity={0.8}
                 onPress={() => navigation.navigate('Album', { id: album.id })}>
-                <Image source={{ uri: album.artwork }} style={styles.cardImage} />
-                <Text style={styles.cardTitle} numberOfLines={1}>{album.title}</Text>
-                <Text style={styles.cardSubtitle} numberOfLines={1}>{album.artist}</Text>
+                <Image source={{ uri: album.artwork }} style={[st.cardImage, { borderRadius: borderRadius.md }]} />
+                <Text style={[st.cardTitle, { color: colors.textPrimary }]} numberOfLines={1}>{album.title}</Text>
+                <Text style={[st.cardSubtitle, { color: colors.textSecondary }]} numberOfLines={1}>{album.artist}</Text>
               </TouchableOpacity>
             ))}
-          </HorizontalScroll>
+          </ScrollView>
         </View>
       )}
 
@@ -196,121 +190,41 @@ export default function HomeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.bgBase },
-
-  header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    paddingHorizontal: layout.screenPadding,
-    marginBottom: 24,
-  },
+const st = StyleSheet.create({
+  container: { flex: 1 },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', paddingHorizontal: layout.screenPadding, marginBottom: 24 },
   headerLeft: { flex: 1 },
-  greeting: {
-    fontSize: fontSize.xxl,
-    fontFamily: fontFamily.bold,
-    color: colors.textPrimary,
-    letterSpacing: -0.5,
-  },
-  subtitle: {
-    fontSize: fontSize.sm,
-    fontFamily: fontFamily.regular,
-    color: colors.textSecondary,
-    marginTop: 4,
-  },
+  greeting: { fontSize: fontSize.xxl, fontFamily: fontFamily.bold, letterSpacing: -0.5 },
+  subtitle: { fontSize: fontSize.sm, fontFamily: fontFamily.regular, marginTop: 4 },
   headerActions: { flexDirection: 'row', alignItems: 'center', gap: 10 },
-  iconBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255,255,255,0.04)',
-    alignItems: 'center',
-    justifyContent: 'center',
-    position: 'relative',
-  },
-  notifDot: {
-    position: 'absolute',
-    top: 8,
-    right: 10,
-    width: 7,
-    height: 7,
-    borderRadius: 4,
-    backgroundColor: colors.accentPink,
-    borderWidth: 2,
-    borderColor: colors.bgBase,
-  },
+  iconBtn: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', position: 'relative' },
+  notifDot: { position: 'absolute', top: 8, right: 10, width: 7, height: 7, borderRadius: 4, borderWidth: 2 },
   avatarBtn: {},
-  avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: colors.accent,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: 'rgba(139,92,246,0.3)',
-  },
-  avatarText: {
-    fontSize: fontSize.md,
-    fontFamily: fontFamily.bold,
-    color: colors.white,
-  },
+  avatar: { width: 40, height: 40, borderRadius: 20, alignItems: 'center', justifyContent: 'center', borderWidth: 2 },
+  avatarText: { fontSize: fontSize.md, fontFamily: fontFamily.bold },
 
   section: { marginTop: 28 },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: layout.screenPadding,
-    marginBottom: 12,
-  },
-  sectionTitle: {
-    fontSize: fontSize.lg,
-    fontFamily: fontFamily.bold,
-    color: colors.textPrimary,
-    letterSpacing: -0.3,
-    paddingHorizontal: layout.screenPadding,
-    marginBottom: 12,
-  },
-  seeMore: {
-    fontSize: fontSize.sm,
-    color: colors.textSecondary,
-    fontFamily: fontFamily.medium,
-  },
+  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: layout.screenPadding, marginBottom: 12 },
+  sectionTitle: { fontSize: fontSize.lg, fontFamily: fontFamily.bold, letterSpacing: -0.3, paddingHorizontal: layout.screenPadding, marginBottom: 12 },
+  seeMore: { fontSize: fontSize.sm, fontFamily: fontFamily.medium },
 
   artistItem: { alignItems: 'center', width: ARTIST_SIZE },
-  artistCircle: {
-    width: ARTIST_SIZE,
-    height: ARTIST_SIZE,
-    borderRadius: ARTIST_SIZE / 2,
-    overflow: 'hidden',
-    borderWidth: 2.5,
-    borderColor: 'rgba(255,255,255,0.05)',
-    marginBottom: 8,
-  },
+  artistCircle: { width: ARTIST_SIZE, height: ARTIST_SIZE, borderRadius: ARTIST_SIZE / 2, overflow: 'hidden', borderWidth: 2.5, marginBottom: 8 },
   artistImage: { width: '100%', height: '100%' },
-  artistName: {
-    fontSize: fontSize.xs,
-    fontFamily: fontFamily.medium,
-    color: colors.textPrimary,
-    textAlign: 'center',
-    width: ARTIST_SIZE,
-  },
+  artistName: { fontSize: fontSize.xs, fontFamily: fontFamily.medium, textAlign: 'center', width: ARTIST_SIZE },
 
   cardItem: { width: CARD_SIZE },
-  cardImage: { width: CARD_SIZE, height: CARD_SIZE, borderRadius: borderRadius.md, marginBottom: 8 },
-  cardTitle: { fontSize: fontSize.sm, fontFamily: fontFamily.semibold, color: colors.textPrimary },
-  cardSubtitle: { fontSize: fontSize.xs, fontFamily: fontFamily.regular, color: colors.textSecondary, marginTop: 2 },
+  cardImage: { width: CARD_SIZE, height: CARD_SIZE, marginBottom: 8 },
+  cardTitle: { fontSize: fontSize.sm, fontFamily: fontFamily.semibold },
+  cardSubtitle: { fontSize: fontSize.xs, fontFamily: fontFamily.regular, marginTop: 2 },
 
   songRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 8, gap: 12 },
-  songIndex: { width: 20, textAlign: 'center', fontSize: fontSize.sm, color: colors.textMuted, fontFamily: fontFamily.medium },
-  songArt: { width: 46, height: 46, borderRadius: borderRadius.sm },
+  songIndex: { width: 20, textAlign: 'center', fontSize: fontSize.sm, fontFamily: fontFamily.medium },
+  songArt: { width: 46, height: 46 },
   songInfo: { flex: 1, minWidth: 0 },
-  songTitle: { fontSize: fontSize.md, fontFamily: fontFamily.semibold, color: colors.textPrimary },
-  songArtist: { fontSize: fontSize.sm, fontFamily: fontFamily.regular, color: colors.textSecondary, marginTop: 2 },
+  songTitle: { fontSize: fontSize.md, fontFamily: fontFamily.semibold },
+  songArtist: { fontSize: fontSize.sm, fontFamily: fontFamily.regular, marginTop: 2 },
 
-  skeleton: { backgroundColor: colors.bgSurface, overflow: 'hidden' },
   skeletonText: { width: 50, height: 10, borderRadius: 4, marginTop: 8 },
   skeletonTitle: { width: '60%', height: 14, borderRadius: 4, marginBottom: 6 },
   skeletonSub: { width: '40%', height: 12, borderRadius: 4 },
