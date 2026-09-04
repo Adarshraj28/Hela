@@ -8,7 +8,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { borderRadius, fontSize, fontFamily, layout } from '../constants/theme';
 import { usePlayerStore } from '../store/playerStore';
 import { useLibraryStore } from '../store/libraryStore';
-import { getTrackLyrics, LyricLine } from '../services/musicApi';
+import { getTrackLyrics, LyricLine, searchYouTubeId, getYouTubeWatchUrl } from '../services/musicApi';
+import * as WebBrowser from 'expo-web-browser';
 import { useTheme } from '../hooks/useTheme';
 import {
   ChevronDownIcon, MoreHorizontalIcon, HeartIcon, ShareIcon,
@@ -16,7 +17,7 @@ import {
   ShuffleIcon, RepeatIcon, RepeatOneIcon, QueueIcon,
   MusicNoteIcon, LyricsIcon,
 } from './Icons';
-import AppleMusicEmbed from './AppleMusicEmbed';
+
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get('window');
 const ARTWORK_SIZE = Math.min(SCREEN_WIDTH - 48, SCREEN_HEIGHT * 0.38);
@@ -32,6 +33,7 @@ export default function FullPlayer() {
   const { isFavorite, addFavorite, removeFavorite, addToRecentlyPlayed } = useLibraryStore();
 
   const [view, setView] = useState<'highlight' | 'lyrics' | 'fullSong'>('highlight');
+  const [ytLoading, setYtLoading] = useState(false);
   const [lyrics, setLyrics] = useState<LyricLine[]>([]);
   const [lyricsLoading, setLyricsLoading] = useState(false);
 
@@ -255,12 +257,43 @@ export default function FullPlayer() {
 
           {view === 'fullSong' && (
             <View style={st.embedContainer}>
-              <AppleMusicEmbed
-                embedUrl={currentTrack.appleMusicEmbedUrl || ''}
-                artwork={currentTrack.artwork}
-                trackTitle={currentTrack.title}
-                artistName={currentTrack.artist}
-              />
+              {/* Artwork */}
+              {currentTrack.artwork ? (
+                <Image source={{ uri: currentTrack.artwork }} style={[st.fullSongArt, { borderRadius: borderRadius.xl }]} />
+              ) : null}
+
+              <Text style={[st.fullSongTitle, { color: colors.textPrimary }]} numberOfLines={1}>{currentTrack.title}</Text>
+              <Text style={[st.fullSongArtist, { color: colors.textSecondary }]} numberOfLines={1}>{currentTrack.artist}</Text>
+
+              {/* Play Full Song Button */}
+              <TouchableOpacity
+                style={[st.fullSongBtn, { backgroundColor: colors.accent }, ytLoading && { opacity: 0.7 }]}
+                onPress={async () => {
+                  if (ytLoading || !currentTrack) return;
+                  setYtLoading(true);
+                  try {
+                    const query = `${currentTrack.title} ${currentTrack.artist}`;
+                    const videoId = await searchYouTubeId(query);
+                    if (videoId) {
+                      await WebBrowser.openBrowserAsync(getYouTubeWatchUrl(videoId));
+                    } else {
+                      // Fallback: open YouTube search
+                      await WebBrowser.openBrowserAsync(
+                        `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`
+                      );
+                    }
+                  } catch {}
+                  setYtLoading(false);
+                }}
+                activeOpacity={0.8}>
+                {ytLoading ? (
+                  <ActivityIndicator color={colors.white} size="small" />
+                ) : (
+                  <Text style={[st.fullSongBtnText, { color: colors.white }]}>▶ Play Full Song</Text>
+                )}
+              </TouchableOpacity>
+
+              <Text style={[st.fullSongHint, { color: colors.textTertiary }]}>Opens in browser for full playback</Text>
             </View>
           )}
         </View>
@@ -329,5 +362,12 @@ const st = StyleSheet.create({
   noLyricsContainer: { alignItems: 'center', paddingTop: 40, gap: 16 },
   lyricsPlaceholder: { fontSize: fontSize.md, textAlign: 'center', letterSpacing: 0.2 },
 
-  embedContainer: { flex: 1, width: '100%' },
+  embedContainer: { flex: 1, width: '100%', alignItems: 'center', justifyContent: 'center', gap: 16 },
+
+  fullSongArt: { width: 200, height: 200, shadowColor: '#000', shadowOffset: { width: 0, height: 16 }, shadowOpacity: 0.5, shadowRadius: 32 },
+  fullSongTitle: { fontFamily: fontFamily.bold, fontSize: fontSize.xl, letterSpacing: -0.3, textAlign: 'center' },
+  fullSongArtist: { fontFamily: fontFamily.medium, fontSize: fontSize.md, textAlign: 'center' },
+  fullSongBtn: { paddingHorizontal: 32, paddingVertical: 16, borderRadius: 9999, marginTop: 8 },
+  fullSongBtnText: { fontFamily: fontFamily.bold, fontSize: fontSize.base, letterSpacing: 0.3 },
+  fullSongHint: { fontFamily: fontFamily.regular, fontSize: fontSize.xs, textAlign: 'center', marginTop: 4 },
 });

@@ -16,7 +16,9 @@
       "bundleIdentifier": "com.hela.app",
       "infoPlist": {
         "NSMicrophoneUsageDescription": "Hela needs microphone access for audio features.",
-        "UIBackgroundModes": ["audio"]
+        "UIBackgroundModes": [
+          "audio"
+        ]
       }
     },
     "android": {
@@ -28,8 +30,7 @@
       "versionCode": 1
     },
     "plugins": [
-      "expo-font",
-      "expo-splash-screen"
+      "expo-font"
     ]
   }
 }

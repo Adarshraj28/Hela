@@ -26,6 +26,7 @@ interface ItunesResponse {
 }
 
 function getArtwork(url: string, size = 300): string {
+  if (!url) return '';
   return url.replace(/100x100bb/, `${size}x${size}bb`);
 }
 
@@ -52,13 +53,32 @@ function transformTrack(t: ItunesTrack): Track {
   };
 }
 
-function transformArtist(tracks: ItunesTrack[]): Artist | null {
-  if (tracks.length === 0) return null;
-  const t = tracks[0];
+function transformArtist(results: ItunesTrack[]): Artist | null {
+  if (results.length === 0) return null;
+
+  // Find artist wrapper first
+  const artistWrapper = results.find(r => r.wrapperType === 'artist');
+  // Find first track with artwork (artist wrappers don't have artworkUrl100)
+  const trackWithArt = results.find(r => r.artworkUrl100 && r.wrapperType !== 'artist');
+  // Also check album results for artwork
+  const albumWithArt = results.find(r => r.artworkUrl100 && r.wrapperType === 'collection');
+
+  const artwork = trackWithArt?.artworkUrl100 || albumWithArt?.artworkUrl100 || '';
+
+  if (artistWrapper) {
+    return {
+      id: `itunes-${artistWrapper.artistId}`,
+      name: artistWrapper.artistName,
+      artwork: getArtwork(artwork, 300),
+    };
+  }
+
+  // Fallback: use first result
+  const t = results[0];
   return {
     id: `itunes-${t.artistId}`,
     name: t.artistName,
-    artwork: getArtwork(t.artworkUrl100, 300),
+    artwork: getArtwork(t.artworkUrl100 || artwork, 300),
   };
 }
 
@@ -219,7 +239,8 @@ export async function getChartAlbums(): Promise<Album[]> {
 
 export async function getArtist(id: string): Promise<Artist> {
   const numId = id.replace('itunes-', '');
-  const data = await fetchItunes<ItunesResponse>(`/lookup?id=${numId}&entity=song&limit=1`);
+  // Fetch artist + songs to get artwork from song results
+  const data = await fetchItunes<ItunesResponse>(`/lookup?id=${numId}&entity=song&limit=5`);
   if (data.results.length === 0) throw new Error('Artist not found');
   const a = transformArtist(data.results);
   if (!a) throw new Error('Artist not found');
@@ -228,8 +249,23 @@ export async function getArtist(id: string): Promise<Artist> {
 
 export async function getArtistTopTracks(id: string): Promise<Track[]> {
   const numId = id.replace('itunes-', '');
-  const data = await fetchItunes<ItunesResponse>(`/lookup?id=${numId}&entity=song&limit=10`);
-  return data.results.filter(t => t.kind === 'song').map(transformTrack);
+  // Use search instead of lookup for better track results
+  try {
+    const artistData = await fetchItunes<ItunesResponse>(`/lookup?id=${numId}&entity=song&limit=1`);
+    const artistName = artistData.results.find(r => r.wrapperType === 'artist')?.artistName;
+    if (artistName) {
+      const searchData = await fetchItunes<ItunesResponse>(
+        `/search?term=${encodeURIComponent(artistName)}&media=music&entity=song&limit=15`
+      );
+      return searchData.results
+        .filter(t => t.kind === 'song' && t.artistId === parseInt(numId))
+        .slice(0, 10)
+        .map(transformTrack);
+    }
+  } catch {}
+  // Fallback
+  const data = await fetchItunes<ItunesResponse>(`/lookup?id=${numId}&entity=song&limit=15`);
+  return data.results.filter(t => t.kind === 'song').slice(0, 10).map(transformTrack);
 }
 
 export async function getArtistAlbums(id: string): Promise<Album[]> {
@@ -265,7 +301,45 @@ export async function getAlbumTracks(id: string): Promise<Track[]> {
     .map(transformTrack);
 }
 
-// Lyrics API (Spotify23 via RapidAPI)
+// ── YouTube Search for Full Songs ──
+// Uses Invidious (free, open-source YouTube frontend) to find video IDs
+
+const INVIDIOUS_INSTANCES = [
+  'https://vid.puffyan.us',
+  'https://invidious.fdn.fr',
+  'https://y.com.sb',
+  'https://invidious.nerdvpn.de',
+];
+
+export async function searchYouTubeId(query: string): Promise<string | null> {
+  const searchQuery = `${query} official`;
+  for (const instance of INVIDIOUS_INSTANCES) {
+    try {
+      const res = await fetch(
+        `${instance}/api/v1/search?q=${encodeURIComponent(searchQuery)}&type=video&sort_by=relevance&page=1`,
+        { signal: AbortSignal.timeout(5000) }
+      );
+      if (!res.ok) continue;
+      const data = await res.json();
+      if (Array.isArray(data) && data.length > 0) {
+        return data[0].videoId;
+      }
+    } catch {
+      continue;
+    }
+  }
+  return null;
+}
+
+export function getYouTubeEmbedUrl(videoId: string): string {
+  return `https://www.youtube.com/embed/${videoId}?autoplay=1&rel=0`;
+}
+
+export function getYouTubeWatchUrl(videoId: string): string {
+  return `https://www.youtube.com/watch?v=${videoId}`;
+}
+
+// ── Lyrics API (Spotify23 via RapidAPI) ──
 const LYRICS_BASE = 'https://spotify23.p.rapidapi.com';
 const LYRICS_KEY = '46c9a2ca18msh67d65dbbe5433c7p1db88djsn92e0cfb46e12';
 
