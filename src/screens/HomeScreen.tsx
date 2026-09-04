@@ -5,12 +5,13 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { borderRadius, fontSize, fontFamily, layout } from '../constants/theme';
 import { usePlayerStore } from '../store/playerStore';
 import { useLibraryStore } from '../store/libraryStore';
+import { useAuthStore } from '../store/authStore';
 import { useTheme } from '../hooks/useTheme';
 import { getGreeting } from '../utils/formatTime';
 import * as api from '../services/musicApi';
 import { Track, Artist, Album } from '../types';
 import SongActionSheet from '../components/SongActionSheet';
-import { BellIcon } from '../components/Icons';
+import { BellIcon, UserIcon } from '../components/Icons';
 
 const CARD_SIZE = 160;
 const ARTIST_SIZE = 76;
@@ -21,6 +22,7 @@ export default function HomeScreen() {
   const colors = useTheme();
   const { playTrack } = usePlayerStore();
   const { recentlyPlayed, favorites } = useLibraryStore();
+  const user = useAuthStore(s => s.user);
   const [trending, setTrending] = useState<Track[]>([]);
   const [artists, setArtists] = useState<Artist[]>([]);
   const [albums, setAlbums] = useState<Album[]>([]);
@@ -48,6 +50,8 @@ export default function HomeScreen() {
   };
 
   const greeting = getGreeting();
+  const displayName = user?.isGuest ? 'there' : user?.username || 'there';
+  const initials = user ? user.username.charAt(0).toUpperCase() : '?';
 
   return (
     <ScrollView
@@ -59,8 +63,8 @@ export default function HomeScreen() {
       {/* Welcome Header */}
       <View style={st.header}>
         <View style={st.headerLeft}>
-          <Text style={[st.greeting, { color: colors.textPrimary }]}>{greeting}</Text>
-          <Text style={[st.subtitle, { color: colors.textSecondary }]}>Wanna feel spirit today ?</Text>
+          <Text style={[st.greeting, { color: colors.textPrimary }]}>{greeting}, {displayName}</Text>
+          <Text style={[st.subtitle, { color: colors.textSecondary }]}>What do you want to listen to?</Text>
         </View>
         <View style={st.headerActions}>
           <TouchableOpacity style={[st.iconBtn, { backgroundColor: colors.controlBg }]} activeOpacity={0.7}>
@@ -68,13 +72,29 @@ export default function HomeScreen() {
             <View style={[st.notifDot, { backgroundColor: colors.accentPink, borderColor: colors.bgBase }]} />
           </TouchableOpacity>
           <TouchableOpacity style={st.avatarBtn} activeOpacity={0.7}
-            onPress={() => navigation.navigate('SettingsTab')}>
+            onPress={() => navigation.navigate('Profile')}>
             <View style={[st.avatar, { backgroundColor: colors.accent, borderColor: 'rgba(139,92,246,0.3)' }]}>
-              <Text style={[st.avatarText, { color: colors.white }]}>H</Text>
+              <Text style={[st.avatarText, { color: colors.white }]}>{initials}</Text>
             </View>
           </TouchableOpacity>
         </View>
       </View>
+
+      {/* Quick Picks — if user has favorites or recently played */}
+      {(favorites.length > 0 || recentlyPlayed.length > 0) && (
+        <View style={st.section}>
+          <Text style={[st.sectionTitle, { color: colors.textPrimary }]}>Quick Picks</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingLeft: layout.screenPadding, gap: 10 }}>
+            {[...recentlyPlayed.slice(0, 4).map(e => e.track), ...favorites.slice(0, 4)].slice(0, 6).map((track, i) => (
+              <TouchableOpacity key={`${track.id}-${i}`} style={[st.quickPick, { backgroundColor: colors.bgSurface }]} activeOpacity={0.8}
+                onPress={() => playTrack(track, [track])} onLongPress={() => { setActionTrack(track); setShowActionSheet(true); }}>
+                <Image source={{ uri: track.artwork }} style={[st.quickPickArt, { borderRadius: borderRadius.sm }]} />
+                <Text style={[st.quickPickTitle, { color: colors.textPrimary }]} numberOfLines={1}>{track.title}</Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+        </View>
+      )}
 
       {/* Artist Recommendation */}
       <View style={st.section}>
@@ -207,6 +227,10 @@ const st = StyleSheet.create({
   sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingHorizontal: layout.screenPadding, marginBottom: 12 },
   sectionTitle: { fontSize: fontSize.lg, fontFamily: fontFamily.bold, letterSpacing: -0.3, paddingHorizontal: layout.screenPadding, marginBottom: 12 },
   seeMore: { fontSize: fontSize.sm, fontFamily: fontFamily.medium },
+
+  quickPick: { width: 130, borderRadius: borderRadius.md, overflow: 'hidden', padding: 8 },
+  quickPickArt: { width: 114, height: 114, marginBottom: 6 },
+  quickPickTitle: { fontSize: fontSize.xs, fontFamily: fontFamily.semibold },
 
   artistItem: { alignItems: 'center', width: ARTIST_SIZE },
   artistCircle: { width: ARTIST_SIZE, height: ARTIST_SIZE, borderRadius: ARTIST_SIZE / 2, overflow: 'hidden', borderWidth: 2.5, marginBottom: 8 },

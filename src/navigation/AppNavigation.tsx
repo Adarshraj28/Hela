@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -8,7 +8,6 @@ import { fontSize } from '../constants/theme';
 import { useTheme } from '../hooks/useTheme';
 import { HomeIcon, SearchIcon, LibraryIcon, SettingsIcon } from '../components/Icons';
 
-// Screens
 import HomeScreen from '../screens/HomeScreen';
 import SearchScreen from '../screens/SearchScreen';
 import LibraryScreen from '../screens/LibraryScreen';
@@ -16,6 +15,7 @@ import SettingsScreen from '../screens/SettingsScreen';
 import AlbumScreen from '../screens/AlbumScreen';
 import ArtistScreen from '../screens/ArtistScreen';
 import PlaylistScreen from '../screens/PlaylistScreen';
+import ProfileScreen from '../screens/ProfileScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -76,6 +76,7 @@ export default function AppNavigation() {
         <Stack.Screen name="Album" component={AlbumScreen} />
         <Stack.Screen name="Artist" component={ArtistScreen} />
         <Stack.Screen name="Playlist" component={PlaylistScreen} />
+        <Stack.Screen name="Profile" component={ProfileScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );

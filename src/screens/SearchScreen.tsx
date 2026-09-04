@@ -5,16 +5,20 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { borderRadius, fontSize, fontFamily, layout } from '../constants/theme';
 import { usePlayerStore } from '../store/playerStore';
 import { useTheme } from '../hooks/useTheme';
+import { useSearchStore } from '../store/searchStore';
 import { searchAll } from '../services/musicApi';
 import { Track, Artist, Album } from '../types';
 import SongActionSheet from '../components/SongActionSheet';
-import { SearchIcon, XIcon } from '../components/Icons';
+import { SearchIcon, XIcon, TrashIcon } from '../components/Icons';
+
+const GENRES = ['Pop', 'Hip-Hop', 'Rock', 'R&B', 'Country', 'Latin', 'K-Pop', 'Indie', 'Jazz', 'Classical'];
 
 export default function SearchScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
   const colors = useTheme();
   const { playTrack } = usePlayerStore();
+  const { history, addSearch, removeSearch, clearHistory, loadHistory } = useSearchStore();
   const [query, setQuery] = useState('');
   const [tracks, setTracks] = useState<Track[]>([]);
   const [artists, setArtists] = useState<Artist[]>([]);
@@ -24,10 +28,13 @@ export default function SearchScreen() {
   const [actionTrack, setActionTrack] = useState<Track | null>(null);
   const [showActionSheet, setShowActionSheet] = useState(false);
 
+  useEffect(() => { loadHistory(); }, []);
+
   const doSearch = useCallback(async (q: string) => {
     if (!q.trim()) { setTracks([]); setArtists([]); setAlbums([]); setSearched(false); return; }
     try {
       setLoading(true);
+      addSearch(q.trim());
       const res = await searchAll(q);
       setTracks(res.tracks);
       setArtists(res.artists);
@@ -48,15 +55,22 @@ export default function SearchScreen() {
     }
   };
 
+  const handleHistoryTap = (q: string) => {
+    setQuery(q);
+    doSearch(q);
+  };
+
   useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current); }, []);
 
   const noResults = searched && !loading && tracks.length === 0 && artists.length === 0 && albums.length === 0;
+  const showBrowse = !searched && !loading;
 
   return (
     <ScrollView style={[st.container, { backgroundColor: colors.bgBase }]}
       contentContainerStyle={{ paddingTop: insets.top + 12, paddingBottom: 120 }}
       showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
 
+      {/* Search Bar */}
       <View style={{ paddingHorizontal: layout.screenPadding, marginBottom: 20 }}>
         <View style={[st.searchBar, { backgroundColor: colors.bgSurface, borderColor: colors.borderMedium }]}>
           <SearchIcon size={18} color={colors.textTertiary} />
@@ -80,6 +94,7 @@ export default function SearchScreen() {
         </View>
       )}
 
+      {/* Search Results */}
       {!loading && tracks.length > 0 && (
         <View style={st.section}>
           <Text style={[st.sectionTitle, { color: colors.textPrimary }]}>Songs</Text>
@@ -130,12 +145,53 @@ export default function SearchScreen() {
         </View>
       )}
 
-      {!searched && !loading && (
-        <View style={st.emptyState}>
-          <SearchIcon size={48} color={colors.textMuted} />
-          <Text style={[st.emptyTitle, { color: colors.textPrimary }]}>Search for music</Text>
-          <Text style={[st.emptyDesc, { color: colors.textSecondary }]}>Find your favorite songs, artists, and albums</Text>
-        </View>
+      {/* Browse Section (when not searching) */}
+      {showBrowse && (
+        <>
+          {/* Search History */}
+          {history.length > 0 && (
+            <View style={st.section}>
+              <View style={st.sectionHeader}>
+                <Text style={[st.sectionTitle, { color: colors.textPrimary }]}>Recent Searches</Text>
+                <TouchableOpacity onPress={clearHistory} activeOpacity={0.7}>
+                  <Text style={[st.clearBtn, { color: colors.accentRed }]}>Clear</Text>
+                </TouchableOpacity>
+              </View>
+              {history.slice(0, 8).map((q, i) => (
+                <TouchableOpacity key={`${q}-${i}`} style={st.historyRow} activeOpacity={0.7}
+                  onPress={() => handleHistoryTap(q)}>
+                  <SearchIcon size={16} color={colors.textTertiary} />
+                  <Text style={[st.historyText, { color: colors.textPrimary }]} numberOfLines={1}>{q}</Text>
+                  <TouchableOpacity onPress={() => removeSearch(q)} activeOpacity={0.7}>
+                    <XIcon size={14} color={colors.textMuted} />
+                  </TouchableOpacity>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+
+          {/* Browse by Genre */}
+          <View style={st.section}>
+            <Text style={[st.sectionTitle, { color: colors.textPrimary }]}>Browse by Genre</Text>
+            <View style={st.genreGrid}>
+              {GENRES.map(genre => (
+                <TouchableOpacity key={genre} style={[st.genreChip, { backgroundColor: colors.bgSurface, borderColor: colors.borderMedium }]}
+                  activeOpacity={0.7} onPress={() => { setQuery(genre); doSearch(genre); }}>
+                  <Text style={[st.genreText, { color: colors.textPrimary }]}>{genre}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+
+          {/* Empty State */}
+          {history.length === 0 && (
+            <View style={st.emptyState}>
+              <SearchIcon size={48} color={colors.textMuted} />
+              <Text style={[st.emptyTitle, { color: colors.textPrimary }]}>Search for music</Text>
+              <Text style={[st.emptyDesc, { color: colors.textSecondary }]}>Find your favorite songs, artists, and albums</Text>
+            </View>
+          )}
+        </>
       )}
 
       <SongActionSheet track={actionTrack} visible={showActionSheet} onClose={() => setShowActionSheet(false)} />
@@ -148,7 +204,17 @@ const st = StyleSheet.create({
   searchBar: { flexDirection: 'row', alignItems: 'center', borderRadius: borderRadius.full, paddingHorizontal: 16, height: 48, borderWidth: 1, gap: 10 },
   searchInput: { flex: 1, fontSize: fontSize.base, fontFamily: fontFamily.regular, padding: 0 },
   section: { marginTop: 24, paddingHorizontal: layout.screenPadding },
+  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 },
   sectionTitle: { fontSize: fontSize.lg, fontFamily: fontFamily.bold, marginBottom: 12 },
+  clearBtn: { fontSize: fontSize.sm, fontFamily: fontFamily.medium },
+
+  historyRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: 'transparent' },
+  historyText: { flex: 1, fontSize: fontSize.md, fontFamily: fontFamily.regular },
+
+  genreGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  genreChip: { paddingHorizontal: 16, paddingVertical: 10, borderRadius: borderRadius.full, borderWidth: 1 },
+  genreText: { fontSize: fontSize.sm, fontFamily: fontFamily.semibold },
+
   songRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingVertical: 8 },
   songArt: { width: 48, height: 48 },
   songInfo: { flex: 1, minWidth: 0 },

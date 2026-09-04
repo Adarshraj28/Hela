@@ -6,17 +6,38 @@ import { View, ActivityIndicator } from 'react-native';
 import AppNavigation from './src/navigation/AppNavigation';
 import MiniPlayer from './src/components/MiniPlayer';
 import FullPlayer from './src/components/FullPlayer';
+import AuthScreen from './src/screens/AuthScreen';
 import { useLibraryStore } from './src/store/libraryStore';
 import { usePlaylistStore } from './src/store/playlistStore';
 import { useThemeStore } from './src/store/themeStore';
+import { useAuthStore } from './src/store/authStore';
 import { useTheme } from './src/hooks/useTheme';
+import { useSearchStore } from './src/store/searchStore';
+
+function AppContent() {
+  const colors = useTheme();
+
+  return (
+    <View style={{ flex: 1, backgroundColor: colors.bgBase }}>
+      <SafeAreaProvider>
+        <StatusBar style={colors.statusBar} />
+        <AppNavigation />
+        <MiniPlayer />
+        <FullPlayer />
+      </SafeAreaProvider>
+    </View>
+  );
+}
 
 export default function App() {
   const loadLibrary = useLibraryStore(s => s.loadLibrary);
   const loadPlaylists = usePlaylistStore(s => s.loadPlaylists);
   const loadTheme = useThemeStore(s => s.loadTheme);
+  const loadUser = useAuthStore(s => s.loadUser);
+  const loadSearchHistory = useSearchStore(s => s.loadHistory);
   const themeLoaded = useThemeStore(s => s.loaded);
-  const colors = useTheme();
+  const authLoaded = useAuthStore(s => s.loaded);
+  const user = useAuthStore(s => s.user);
 
   const [fontsLoaded] = useFonts({
     SpaceGrotesk_400Regular,
@@ -29,9 +50,11 @@ export default function App() {
     loadLibrary();
     loadPlaylists();
     loadTheme();
+    loadUser();
+    loadSearchHistory();
   }, []);
 
-  if (!fontsLoaded || !themeLoaded) {
+  if (!fontsLoaded || !themeLoaded || !authLoaded) {
     return (
       <View style={{ flex: 1, backgroundColor: '#06060b', alignItems: 'center', justifyContent: 'center' }}>
         <ActivityIndicator color="#8b5cf6" size="large" />
@@ -39,14 +62,14 @@ export default function App() {
     );
   }
 
-  return (
-    <View style={{ flex: 1, backgroundColor: colors.bgBase }}>
+  if (!user) {
+    return (
       <SafeAreaProvider>
-        <StatusBar style={colors.statusBar} />
-        <AppNavigation />
-        <MiniPlayer />
-        <FullPlayer />
+        <StatusBar style="light" />
+        <AuthScreen />
       </SafeAreaProvider>
-    </View>
-  );
+    );
+  }
+
+  return <AppContent />;
 }

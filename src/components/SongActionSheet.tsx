@@ -7,7 +7,8 @@ import { useLibraryStore } from '../store/libraryStore';
 import { usePlaylistStore } from '../store/playlistStore';
 import { useTheme } from '../hooks/useTheme';
 import { Track } from '../types';
-import { PlayIcon, SkipForwardIcon, HeartIcon, PlusIcon, UserIcon, DiscIcon, MusicNoteIcon, ArrowLeftIcon } from './Icons';
+import { PlayIcon, SkipForwardIcon, HeartIcon, PlusIcon, UserIcon, DiscIcon, MusicNoteIcon, ArrowLeftIcon, ShareIcon } from './Icons';
+import { Linking } from 'react-native';
 
 interface Props { track: Track | null; visible: boolean; onClose: () => void; }
 
@@ -80,6 +81,15 @@ export default function SongActionSheet({ track, visible, onClose }: Props) {
                   <Text style={[st.actionText, { color: colors.textPrimary }]}>Go to Album</Text>
                 </TouchableOpacity>
               )}
+
+              <TouchableOpacity style={st.actionRow} onPress={() => {
+                onClose();
+                const url = track.appleMusicEmbedUrl || `https://music.apple.com/search?term=${encodeURIComponent(track.title + ' ' + track.artist)}`;
+                Linking.openURL(url).catch(() => {});
+              }}>
+                <ShareIcon size={18} color={colors.textPrimary} />
+                <Text style={[st.actionText, { color: colors.textPrimary }]}>Share Song</Text>
+              </TouchableOpacity>
             </ScrollView>
           ) : (
             <ScrollView style={st.actions} showsVerticalScrollIndicator={false}>

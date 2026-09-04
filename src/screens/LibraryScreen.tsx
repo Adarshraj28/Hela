@@ -15,7 +15,7 @@ export default function LibraryScreen() {
   const insets = useSafeAreaInsets();
   const navigation = useNavigation<any>();
   const colors = useTheme();
-  const { favorites, favoriteAlbums, favoriteArtists } = useLibraryStore();
+  const { favorites, favoriteAlbums, favoriteArtists, recentlyPlayed } = useLibraryStore();
   const { playlists, createPlaylist } = usePlaylistStore();
   const { playTrack } = usePlayerStore();
 
@@ -127,7 +127,24 @@ export default function LibraryScreen() {
         </View>
       )}
 
-      {favorites.length === 0 && favoriteAlbums.length === 0 && favoriteArtists.length === 0 && playlists.length === 0 && (
+      {/* Recently Played */}
+      {recentlyPlayed.length > 0 && (
+        <View style={st.section}>
+          <Text style={[st.sectionTitle, { color: colors.textPrimary }]}>Recently Played</Text>
+          {recentlyPlayed.slice(0, 5).map((entry, i) => (
+            <TouchableOpacity key={`${entry.track.id}-${i}`} style={st.listRow} activeOpacity={0.7}
+              onPress={() => playTrack(entry.track, recentlyPlayed.map(e => e.track))}>
+              <Image source={{ uri: entry.track.artwork }} style={[st.listArt, { borderRadius: borderRadius.sm }]} />
+              <View style={st.listInfo}>
+                <Text style={[st.listTitle, { color: colors.textPrimary }]} numberOfLines={1}>{entry.track.title}</Text>
+                <Text style={[st.listSubtitle, { color: colors.textSecondary }]} numberOfLines={1}>{entry.track.artist}</Text>
+              </View>
+            </TouchableOpacity>
+          ))}
+        </View>
+      )}
+
+      {favorites.length === 0 && favoriteAlbums.length === 0 && favoriteArtists.length === 0 && playlists.length === 0 && recentlyPlayed.length === 0 && (
         <View style={st.emptyState}>
           <MusicNoteIcon size={48} color={colors.textMuted} />
           <Text style={[st.emptyTitle, { color: colors.textPrimary }]}>Your library is empty</Text>
