@@ -13,19 +13,22 @@ import { useThemeStore } from './src/store/themeStore';
 import { useAuthStore } from './src/store/authStore';
 import { useTheme } from './src/hooks/useTheme';
 import { useSearchStore } from './src/store/searchStore';
+import { ToastProvider } from './src/components/Toast';
 
 function AppContent() {
   const colors = useTheme();
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.bgBase }}>
-      <SafeAreaProvider>
-        <StatusBar style={colors.statusBar} />
-        <AppNavigation />
-        <MiniPlayer />
-        <FullPlayer />
-      </SafeAreaProvider>
-    </View>
+    <ToastProvider>
+      <View style={{ flex: 1, backgroundColor: colors.bgBase }}>
+        <SafeAreaProvider>
+          <StatusBar style={colors.statusBar} />
+          <AppNavigation />
+          <MiniPlayer />
+          <FullPlayer />
+        </SafeAreaProvider>
+      </View>
+    </ToastProvider>
   );
 }
 

@@ -26,7 +26,9 @@ export default function ArtistScreen() {
     const id = route.params?.id;
     if (!id) return;
     (async () => {
-      try { setLoading(true); const [a, t, al] = await Promise.all([api.getArtist(id), api.getArtistTopTracks(id), api.getArtistAlbums(id)]); setArtist(a); setTracks(t); setAlbums(al); } catch {} finally { setLoading(false); }
+      try { setLoading(true); const [a, t, al] = await Promise.all([api.getArtist(id), api.getArtistTopTracks(id), api.getArtistAlbums(id)]); setArtist(a); setTracks(t); setAlbums(al);    } catch {
+      // Artist not found — handled by null check below
+    } finally { setLoading(false); }
     })();
   }, [route.params?.id]);
 

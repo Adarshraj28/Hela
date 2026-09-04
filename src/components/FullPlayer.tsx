@@ -217,15 +217,20 @@ export default function FullPlayer() {
                 </TouchableOpacity>
               </View>
 
-              {/* Bottom buttons */}
+              {/* Bottom buttons — Share + Lyrics shortcut */}
               <View style={st.bottomBtns}>
-                <TouchableOpacity style={[st.bottomBtn, { backgroundColor: colors.controlBg, borderColor: colors.borderMedium }]} activeOpacity={0.7}>
-                  <MusicNoteIcon size={16} color={colors.textSecondary} />
-                  <Text style={[st.bottomBtnText, { color: colors.textSecondary }]}>Equalizer</Text>
+                <TouchableOpacity style={[st.bottomBtn, { backgroundColor: colors.controlBg, borderColor: colors.borderMedium }]} activeOpacity={0.7}
+                  onPress={() => {
+                    const url = currentTrack.appleMusicEmbedUrl || `https://music.apple.com/search?term=${encodeURIComponent(currentTrack.title + ' ' + currentTrack.artist)}`;
+                    import('react-native').then(({ Linking }) => Linking.openURL(url).catch(() => {}));
+                  }}>
+                  <ShareIcon size={16} color={colors.textSecondary} />
+                  <Text style={[st.bottomBtnText, { color: colors.textSecondary }]}>Share</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={[st.bottomBtn, { backgroundColor: colors.controlBg, borderColor: colors.borderMedium }]} activeOpacity={0.7}>
-                  <QueueIcon size={16} color={colors.textSecondary} />
-                  <Text style={[st.bottomBtnText, { color: colors.textSecondary }]}>Queue List</Text>
+                <TouchableOpacity style={[st.bottomBtn, { backgroundColor: colors.controlBg, borderColor: colors.borderMedium }]} activeOpacity={0.7}
+                  onPress={() => setView('lyrics')}>
+                  <LyricsIcon size={16} color={colors.textSecondary} />
+                  <Text style={[st.bottomBtnText, { color: colors.textSecondary }]}>Lyrics</Text>
                 </TouchableOpacity>
               </View>
             </>

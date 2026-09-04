@@ -10,6 +10,7 @@ import { searchAll } from '../services/musicApi';
 import { Track, Artist, Album } from '../types';
 import SongActionSheet from '../components/SongActionSheet';
 import { SearchIcon, XIcon, TrashIcon } from '../components/Icons';
+import { useToast } from '../components/Toast';
 
 const GENRES = ['Pop', 'Hip-Hop', 'Rock', 'R&B', 'Country', 'Latin', 'K-Pop', 'Indie', 'Jazz', 'Classical'];
 
@@ -27,6 +28,7 @@ export default function SearchScreen() {
   const [searched, setSearched] = useState(false);
   const [actionTrack, setActionTrack] = useState<Track | null>(null);
   const [showActionSheet, setShowActionSheet] = useState(false);
+  const { showToast } = useToast();
 
   useEffect(() => { loadHistory(); }, []);
 
@@ -40,7 +42,9 @@ export default function SearchScreen() {
       setArtists(res.artists);
       setAlbums(res.albums);
       setSearched(true);
-    } catch {} finally { setLoading(false); }
+    } catch (e) {
+      showToast('Search failed. Check your connection.', 'error');
+    } finally { setLoading(false); }
   }, []);
 
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);

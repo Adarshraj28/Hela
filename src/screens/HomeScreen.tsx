@@ -14,6 +14,7 @@ import SongActionSheet from '../components/SongActionSheet';
 import MoodGenreCards from '../components/MoodGenreCards';
 import SectionHeader from '../components/SectionHeader';
 import { BellIcon, UserIcon } from '../components/Icons';
+import { useToast } from '../components/Toast';
 
 const CARD_SIZE = 155;
 const ARTIST_SIZE = 76;
@@ -32,6 +33,7 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [actionTrack, setActionTrack] = useState<Track | null>(null);
   const [showActionSheet, setShowActionSheet] = useState(false);
+  const { showToast } = useToast();
 
   const loadData = useCallback(async () => {
     try {
@@ -40,7 +42,9 @@ export default function HomeScreen() {
       setTrending(t);
       setArtists(a);
       api.getChartAlbums().then(setAlbums).catch(() => {});
-    } catch {} finally { setLoading(false); }
+    } catch {
+      showToast('Failed to load music. Pull to retry.', 'error');
+    } finally { setLoading(false); }
   }, []);
 
   useEffect(() => { loadData(); }, [loadData]);
@@ -74,7 +78,8 @@ export default function HomeScreen() {
           <Text style={[st.displayName, { color: colors.textPrimary }]}>{displayName} 👋</Text>
         </View>
         <View style={st.headerActions}>
-          <TouchableOpacity style={[st.iconBtn, { backgroundColor: colors.controlBg }]} activeOpacity={0.7}>
+          <TouchableOpacity style={[st.iconBtn, { backgroundColor: colors.controlBg }]} activeOpacity={0.7}
+            onPress={() => showToast('No new notifications', 'info')}>
             <BellIcon size={19} color={colors.textSecondary} />
             <View style={[st.notifDot, { backgroundColor: colors.accentPink, borderColor: colors.bgBase }]} />
           </TouchableOpacity>
