@@ -30,13 +30,17 @@ export default function MiniPlayer() {
   const pct = duration > 0 ? (progress / duration) * 100 : 0;
 
   return (
-    <View style={[s.container, { bottom: layout.navHeight + 6, backgroundColor: colors.miniPlayerBg, borderColor: colors.miniPlayerBorder }]}>
-      <View style={[s.progressBar, { backgroundColor: colors.controlBg }]}>
+    <Pressable style={[s.container, { bottom: layout.navHeight + insets.bottom + 20, backgroundColor: colors.glassBg, borderColor: colors.glassBorder }]} onPress={toggleFullPlayer}>
+      {/* Glass highlight */}
+      <View style={[s.glassHighlight, { backgroundColor: colors.glassHighlight }]} />
+
+      {/* Progress bar */}
+      <View style={[s.progressBar, { backgroundColor: colors.seekBar }]}>
         <View style={[s.progressFill, { width: `${pct}%`, backgroundColor: colors.accent }]} />
       </View>
 
-      <Pressable style={s.content} onPress={toggleFullPlayer}>
-        <View style={[s.artwork, isPlaying && { borderColor: colors.accent }]}>
+      <View style={s.content}>
+        <View style={[s.artworkWrap, isPlaying && { borderColor: colors.accent }]}>
           <Image source={{ uri: currentTrack.artwork }} style={s.artworkImage} />
         </View>
 
@@ -60,32 +64,50 @@ export default function MiniPlayer() {
         )}
 
         <TouchableOpacity style={[s.playBtn, { backgroundColor: colors.white }]} onPress={(e) => { e.stopPropagation(); togglePlay(); }} activeOpacity={0.8}>
-          {isPlaying ? <PauseIcon size={18} color={colors.bgBase} /> : <PlayIcon size={18} color={colors.bgBase} />}
+          {isPlaying ? <PauseIcon size={16} color={colors.bgBase} /> : <PlayIcon size={16} color={colors.bgBase} />}
         </TouchableOpacity>
 
         <TouchableOpacity style={s.iconBtn} onPress={(e) => { e.stopPropagation(); next(); }} activeOpacity={0.7}>
           <SkipForwardIcon size={18} color={colors.textSecondary} />
         </TouchableOpacity>
-      </Pressable>
-    </View>
+      </View>
+    </Pressable>
   );
 }
 
 const s = StyleSheet.create({
   container: {
-    position: 'absolute', left: 8, right: 8, height: layout.miniPlayerHeight,
-    borderRadius: borderRadius.lg, borderWidth: 1, zIndex: 300, overflow: 'hidden',
-    shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.6, shadowRadius: 20, elevation: 12,
+    position: 'absolute',
+    left: 12,
+    right: 12,
+    height: 64,
+    borderRadius: 24,
+    borderWidth: 1,
+    zIndex: 300,
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.45,
+    shadowRadius: 20,
+    elevation: 16,
   },
-  progressBar: { height: 2 },
+  glassHighlight: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 1,
+    opacity: 0.25,
+  },
+  progressBar: { position: 'absolute', bottom: 0, left: 0, right: 0, height: 2 },
   progressFill: { height: '100%', borderRadius: 1 },
   content: { flex: 1, flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, gap: 10 },
-  artwork: { width: 46, height: 46, borderRadius: borderRadius.sm, overflow: 'hidden', borderWidth: 1.5, borderColor: 'transparent' },
+  artworkWrap: { width: 44, height: 44, borderRadius: 14, overflow: 'hidden', borderWidth: 1.5, borderColor: 'transparent' },
   artworkImage: { width: '100%', height: '100%' },
   trackInfo: { flex: 1, minWidth: 0 },
-  title: { fontSize: fontSize.sm, fontFamily: fontFamily.semibold },
-  artist: { fontSize: fontSize.xs, fontFamily: fontFamily.regular, marginTop: 1 },
+  title: { fontSize: fontSize.sm, fontFamily: fontFamily.semibold, letterSpacing: -0.2 },
+  artist: { fontSize: fontSize.xs, fontFamily: fontFamily.regular, marginTop: 1, letterSpacing: 0.2 },
   iconBtn: { padding: 4, alignItems: 'center', justifyContent: 'center' },
-  playBtn: { width: 42, height: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center' },
+  playBtn: { width: 38, height: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center' },
   loadingRing: { width: 18, height: 18, borderRadius: 9, borderWidth: 2 },
 });

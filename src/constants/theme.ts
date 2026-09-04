@@ -47,6 +47,14 @@ const darkColors = {
   seekBar: 'rgba(255,255,255,0.1)',
   controlBg: 'rgba(255,255,255,0.06)',
   statusBar: 'light' as const,
+
+  // Glass tokens
+  glassBg: 'rgba(18, 18, 30, 0.65)',
+  glassBorder: 'rgba(255, 255, 255, 0.08)',
+  glassHighlight: 'rgba(255, 255, 255, 0.04)',
+  glassShadow: 'rgba(0, 0, 0, 0.5)',
+  glassActive: 'rgba(139, 92, 246, 0.15)',
+  glassActiveBorder: 'rgba(139, 92, 246, 0.25)',
 };
 
 // ── Light palette ──
@@ -96,9 +104,25 @@ const lightColors = {
   seekBar: 'rgba(0,0,0,0.1)',
   controlBg: 'rgba(0,0,0,0.06)',
   statusBar: 'dark' as const,
+
+  // Glass tokens
+  glassBg: 'rgba(255, 255, 255, 0.65)',
+  glassBorder: 'rgba(0, 0, 0, 0.06)',
+  glassHighlight: 'rgba(255, 255, 255, 0.5)',
+  glassShadow: 'rgba(0, 0, 0, 0.12)',
+  glassActive: 'rgba(139, 92, 246, 0.12)',
+  glassActiveBorder: 'rgba(139, 92, 246, 0.2)',
 };
 
-export type AppColors = Omit<typeof darkColors, 'statusBar'> & { statusBar: 'light' | 'dark' };
+export type AppColors = Omit<typeof darkColors, 'statusBar'> & {
+  statusBar: 'light' | 'dark';
+  glassBg: string;
+  glassBorder: string;
+  glassHighlight: string;
+  glassShadow: string;
+  glassActive: string;
+  glassActiveBorder: string;
+};
 
 export function getColors(mode: ThemeMode): AppColors {
   return mode === 'dark' ? darkColors : lightColors;
@@ -154,8 +178,8 @@ export const fontWeight = {
 } as const;
 
 export const layout = {
-  navHeight: 64,
-  miniPlayerHeight: 68,
+  navHeight: 76,
+  miniPlayerHeight: 64,
   screenPadding: 20,
   artworkRadius: 12,
   artistCircleSize: 76,
