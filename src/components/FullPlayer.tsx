@@ -257,6 +257,7 @@ export default function FullPlayer() {
             <View style={st.embedContainer}>
               <AppleMusicEmbed
                 embedUrl={currentTrack.appleMusicEmbedUrl || ''}
+                artwork={currentTrack.artwork}
                 trackTitle={currentTrack.title}
                 artistName={currentTrack.artist}
               />

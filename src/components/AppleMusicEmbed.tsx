@@ -1,101 +1,106 @@
 import React from 'react';
-import { View, StyleSheet, ActivityIndicator, Text } from 'react-native';
-import { WebView } from 'react-native-webview';
+import { View, StyleSheet, Text, TouchableOpacity, Linking, Image } from 'react-native';
 import { borderRadius, fontFamily, fontSize } from '../constants/theme';
 import { useTheme } from '../hooks/useTheme';
 import { MusicNoteIcon } from './Icons';
 
 interface Props {
   embedUrl: string;
+  artwork?: string;
   trackTitle?: string;
   artistName?: string;
 }
 
-function getEmbedHTML(url: string): string {
-  return `
-    <!DOCTYPE html>
-    <html>
-    <head>
-      <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-      <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        html, body { width: 100%; height: 100%; background: transparent; overflow: hidden; }
-        .container { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; }
-        iframe { width: 100%; height: 100%; border: none; border-radius: 12px; overflow: hidden; }
-      </style>
-    </head>
-    <body>
-      <div class="container">
-        <iframe
-          allow="autoplay *; encrypted-media *; fullscreen *; clipboard-write"
-          frameborder="0"
-          height="450"
-          style="width:100%;max-width:660px;overflow:hidden;border-radius:10px;background:transparent;"
-          sandbox="allow-forms allow-popups allow-same-origin allow-scripts allow-storage-access-by-user-activation allow-top-navigation-by-user-activation"
-          src="${url}"
-        ></iframe>
-      </div>
-    </body>
-    </html>
-  `;
-}
-
-export default function AppleMusicEmbed({ embedUrl, trackTitle, artistName }: Props) {
+export default function AppleMusicEmbed({ embedUrl, artwork, trackTitle, artistName }: Props) {
   const colors = useTheme();
 
-  if (!embedUrl) {
-    return (
-      <View style={s.fallback}>
-        <MusicNoteIcon size={48} color={colors.textMuted} />
-        <Text style={[s.fallbackTitle, { color: colors.textPrimary }]}>Full song unavailable</Text>
-        <Text style={[s.fallbackDesc, { color: colors.textSecondary }]}>
-          {trackTitle ? `${trackTitle} by ${artistName || ''}` : 'This track is not available for streaming'}
-        </Text>
-        <Text style={[s.fallbackHint, { color: colors.textTertiary }]}>
-          Open in Apple Music to listen to the full track
-        </Text>
-      </View>
-    );
-  }
+  const handleOpen = () => {
+    if (embedUrl) {
+      Linking.openURL(embedUrl).catch(() => {});
+    }
+  };
 
   return (
     <View style={s.container}>
-      <WebView
-        source={{ html: getEmbedHTML(embedUrl) }}
-        style={s.webview}
-        startInLoadingState={true}
-        renderLoading={() => (
-          <View style={[s.loadingContainer, { backgroundColor: colors.bgPrimary + 'e6' }]}>
-            <ActivityIndicator color={colors.accent} size="large" />
-            <Text style={[s.loadingText, { color: colors.textSecondary }]}>Loading Apple Music...</Text>
-          </View>
-        )}
-        allowsInlineMediaPlayback={true}
-        mediaPlaybackRequiresUserAction={false}
-        allowsFullscreenVideo={false}
-        bounces={false}
-        scrollEnabled={false}
-        showsVerticalScrollIndicator={false}
-        showsHorizontalScrollIndicator={false}
-        overScrollMode="never"
-        javaScriptEnabled={true}
-        domStorageEnabled={true}
-        originWhitelist={['*']}
-      />
+      {/* Artwork */}
+      {artwork ? (
+        <Image source={{ uri: artwork }} style={[s.artwork, { borderRadius: borderRadius.xl }]} />
+      ) : (
+        <View style={[s.artworkPlaceholder, { backgroundColor: colors.bgSurface, borderRadius: borderRadius.xl }]}>
+          <MusicNoteIcon size={48} color={colors.accent} />
+        </View>
+      )}
+
+      {/* Track info */}
+      <Text style={[s.title, { color: colors.textPrimary }]} numberOfLines={1}>{trackTitle || 'Unknown Track'}</Text>
+      <Text style={[s.artist, { color: colors.textSecondary }]} numberOfLines={1}>{artistName || 'Unknown Artist'}</Text>
+
+      {/* Open in Apple Music button */}
+      {embedUrl ? (
+        <TouchableOpacity style={[s.openBtn, { backgroundColor: colors.accent }]} onPress={handleOpen} activeOpacity={0.8}>
+          <Text style={[s.openBtnText, { color: colors.white }]}>Open in Apple Music</Text>
+        </TouchableOpacity>
+      ) : (
+        <View style={[s.openBtn, { backgroundColor: colors.controlBg, opacity: 0.5 }]}>
+          <Text style={[s.openBtnText, { color: colors.textTertiary }]}>Not Available</Text>
+        </View>
+      )}
+
+      <Text style={[s.hint, { color: colors.textTertiary }]}>
+        Full song playback via Apple Music
+      </Text>
     </View>
   );
 }
 
 const s = StyleSheet.create({
-  container: { flex: 1, width: '100%', alignItems: 'center', justifyContent: 'center' },
-  webview: { flex: 1, width: '100%', backgroundColor: 'transparent' },
-  loadingContainer: {
-    position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-    alignItems: 'center', justifyContent: 'center', gap: 12,
+  container: {
+    flex: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 24,
+    gap: 16,
   },
-  loadingText: { fontFamily: fontFamily.medium, fontSize: fontSize.sm },
-  fallback: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 40, gap: 12 },
-  fallbackTitle: { fontFamily: fontFamily.semibold, fontSize: fontSize.lg },
-  fallbackDesc: { fontFamily: fontFamily.regular, fontSize: fontSize.sm, textAlign: 'center' },
-  fallbackHint: { fontFamily: fontFamily.regular, fontSize: fontSize.xs, textAlign: 'center', marginTop: 8 },
+  artwork: {
+    width: 220,
+    height: 220,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 16 },
+    shadowOpacity: 0.5,
+    shadowRadius: 32,
+    elevation: 12,
+  },
+  artworkPlaceholder: {
+    width: 220,
+    height: 220,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  title: {
+    fontFamily: fontFamily.bold,
+    fontSize: fontSize.xl,
+    letterSpacing: -0.3,
+    textAlign: 'center',
+  },
+  artist: {
+    fontFamily: fontFamily.medium,
+    fontSize: fontSize.md,
+    textAlign: 'center',
+  },
+  openBtn: {
+    paddingHorizontal: 32,
+    paddingVertical: 14,
+    borderRadius: borderRadius.full,
+    marginTop: 8,
+  },
+  openBtnText: {
+    fontFamily: fontFamily.semibold,
+    fontSize: fontSize.base,
+  },
+  hint: {
+    fontFamily: fontFamily.regular,
+    fontSize: fontSize.xs,
+    textAlign: 'center',
+    marginTop: 4,
+  },
 });
