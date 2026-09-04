@@ -16,6 +16,7 @@ import AlbumScreen from '../screens/AlbumScreen';
 import ArtistScreen from '../screens/ArtistScreen';
 import PlaylistScreen from '../screens/PlaylistScreen';
 import ProfileScreen from '../screens/ProfileScreen';
+import StatsScreen from '../screens/StatsScreen';
 
 const Tab = createBottomTabNavigator();
 const Stack = createNativeStackNavigator();
@@ -121,6 +122,7 @@ export default function AppNavigation() {
         <Stack.Screen name="Artist" component={ArtistScreen} />
         <Stack.Screen name="Playlist" component={PlaylistScreen} />
         <Stack.Screen name="Profile" component={ProfileScreen} />
+        <Stack.Screen name="Stats" component={StatsScreen} />
       </Stack.Navigator>
     </NavigationContainer>
   );
